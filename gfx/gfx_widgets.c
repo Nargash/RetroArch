@@ -637,7 +637,7 @@ void gfx_widgets_draw_icon(
    draw.matrix_data     = &mymat;
    draw.texture         = texture;
    draw.prim_type       = GFX_DISPLAY_PRIM_TRIANGLESTRIP;
-   draw.pipeline.id     = 0;
+   draw.pipeline_id     = 0;
 
    gfx_display_draw(&draw, userdata,
          video_width, video_height);
@@ -688,7 +688,7 @@ static void gfx_widgets_draw_icon_blend(
    draw.matrix_data     = &mymat;
    draw.texture         = texture;
    draw.prim_type       = GFX_DISPLAY_PRIM_TRIANGLESTRIP;
-   draw.pipeline.id     = 0;
+   draw.pipeline_id     = 0;
 
    gfx_display_draw_blend(&draw, userdata,
          video_width, video_height);
@@ -859,9 +859,7 @@ void gfx_widgets_iterate(
          {
             /* Task messages always appear from the bottom of the screen, append it */
             if (p_dispwidget->msg_queue_tasks_count == 0 || msg_widget->task_ptr)
-            {
                p_dispwidget->current_msgs[p_dispwidget->current_msgs_size] = msg_widget;
-            }
             /* Regular messages are always above tasks, make room and insert it */
             else
             {

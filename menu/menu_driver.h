@@ -178,6 +178,8 @@ enum menu_settings_type
    MENU_SETTINGS_PERF_COUNTERS_END = MENU_SETTINGS_PERF_COUNTERS_BEGIN + (MAX_COUNTERS - 1),
    MENU_SETTINGS_CHEAT_BEGIN,
    MENU_SETTINGS_CHEAT_END = MENU_SETTINGS_CHEAT_BEGIN + (MAX_CHEAT_COUNTERS - 1),
+
+   MENU_SETTINGS_INPUT_ANALOG_DPAD_MODE,
    MENU_SETTINGS_INPUT_BEGIN,
    MENU_SETTINGS_INPUT_END = MENU_SETTINGS_INPUT_BEGIN + RARCH_CUSTOM_BIND_LIST_END + 6,
    MENU_SETTINGS_INPUT_DESC_BEGIN,
@@ -188,7 +190,6 @@ enum menu_settings_type
    MENU_SETTINGS_REMAPPING_PORT_END = MENU_SETTINGS_REMAPPING_PORT_BEGIN + (MAX_USERS),
 
    MENU_SETTINGS_SUBSYSTEM_LOAD,
-
    MENU_SETTINGS_SUBSYSTEM_ADD,
    MENU_SETTINGS_SUBSYSTEM_LAST = MENU_SETTINGS_SUBSYSTEM_ADD + RARCH_MAX_SUBSYSTEMS,
    MENU_SETTINGS_CHEAT_MATCH,
@@ -306,11 +307,28 @@ typedef struct menu_ctx_driver
 
 typedef struct
 {
-   unsigned rpl_entry_selection_ptr;
-   size_t                     core_len;
    uint64_t state;
 
+   /* Holds a list of search terms that may be
+    * used to filter the currently displayed
+    * menu list */
+   struct string_list *search_terms;
+
+   const menu_ctx_driver_t *driver_ctx;
+   void *userdata;
    char *core_buf;
+
+   size_t                     core_len;
+   /* This is used for storing intermediary variables
+    * that get used later on during menu actions -
+    * for instance, selecting a shader pass for a shader
+    * slot */
+   struct
+   {
+      unsigned                unsigned_var;
+   } scratchpad;
+   unsigned rpl_entry_selection_ptr;
+
    char menu_state_msg[8192];
    /* Scratchpad variables. These are used for instance
     * by the filebrowser when having to store intermediary
@@ -322,23 +340,6 @@ typedef struct
    char db_playlist_file[PATH_MAX_LENGTH];
    char filebrowser_label[PATH_MAX_LENGTH];
    char detect_content_path[PATH_MAX_LENGTH];
-
-   /* This is used for storing intermediary variables
-    * that get used later on during menu actions -
-    * for instance, selecting a shader pass for a shader
-    * slot */
-   struct
-   {
-      unsigned                unsigned_var;
-   } scratchpad;
-
-   /* Holds a list of search terms that may be
-    * used to filter the currently displayed
-    * menu list */
-   struct string_list *search_terms;
-
-   const menu_ctx_driver_t *driver_ctx;
-   void *userdata;
 } menu_handle_t;
 
 typedef struct menu_content_ctx_defer_info
@@ -387,30 +388,30 @@ typedef struct menu_ctx_iterate
 
 typedef struct menu_ctx_environment
 {
-   enum menu_environ_cb type;
    void *data;
+   enum menu_environ_cb type;
 } menu_ctx_environment_t;
 
 typedef struct menu_ctx_pointer
 {
+   menu_file_list_cbs_t *cbs;
+   menu_entry_t *entry;
    unsigned x;
    unsigned y;
    unsigned ptr;
    unsigned action;
-   enum menu_input_pointer_gesture gesture;
    int retcode;
-   menu_file_list_cbs_t *cbs;
-   menu_entry_t *entry;
+   enum menu_input_pointer_gesture gesture;
 } menu_ctx_pointer_t;
 
 typedef struct menu_ctx_bind
 {
+   menu_file_list_cbs_t *cbs;
    const char *path;
    const char *label;
-   unsigned type;
    size_t idx;
    int retcode;
-   menu_file_list_cbs_t *cbs;
+   unsigned type;
 } menu_ctx_bind_t;
 
 /**
@@ -488,6 +489,9 @@ void menu_explore_context_deinit(void);
 void menu_explore_free(void);
 #endif
 
+/* Returns true if search filter is enabled
+ * for the specified menu list */
+bool menu_driver_search_filter_enabled(const char *label, unsigned type);
 bool menu_driver_search_push(const char *search_term);
 bool menu_driver_search_pop(void);
 void menu_driver_search_clear(void);

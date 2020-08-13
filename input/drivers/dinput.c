@@ -56,10 +56,10 @@ LPDIRECTINPUT8 g_dinput_ctx;
 
 struct pointer_status
 {
+   struct pointer_status *next;
    int pointer_id;
    int pointer_x;
    int pointer_y;
-   struct pointer_status *next;
 };
 
 struct dinput_input
@@ -68,7 +68,7 @@ struct dinput_input
    LPDIRECTINPUTDEVICE8 keyboard;
    LPDIRECTINPUTDEVICE8 mouse;
    const input_device_driver_t *joypad;
-   uint8_t state[256];
+   struct pointer_status pointer_head;  /* dummy head for easier iteration */
 
    int window_pos_x;
    int window_pos_y;
@@ -76,9 +76,9 @@ struct dinput_input
    int mouse_rel_y;
    int mouse_x;
    int mouse_y;
+   uint8_t state[256];
    bool doubleclick_on_titlebar;
    bool mouse_l, mouse_r, mouse_m, mouse_b4, mouse_b5, mouse_wu, mouse_wd, mouse_hwu, mouse_hwd;
-   struct pointer_status pointer_head;  /* dummy head for easier iteration */
 };
 
 void dinput_destroy_context(void)
@@ -185,14 +185,19 @@ static void *dinput_init(const char *joypad_driver)
 
 static void dinput_poll(void *data)
 {
-   unsigned i;
    struct dinput_input *di = (struct dinput_input*)data;
+   uint8_t *kb_state       = NULL;
 
    if (!di)
       return;
 
-   for (i = 0; i < 256; i++)
-      di->state[i] = 0;
+   kb_state                = &di->state[0];
+
+   for (
+         ; kb_state < di->state + 256
+         ; kb_state++)
+      *kb_state = 0;
+
    if (di->keyboard)
    {
       if (FAILED(IDirectInputDevice8_GetDeviceState(
@@ -202,8 +207,10 @@ static void dinput_poll(void *data)
          if (FAILED(IDirectInputDevice8_GetDeviceState(
                      di->keyboard, sizeof(di->state), di->state)))
          {
-            for (i = 0; i < 256; i++)
-               di->state[i] = 0;
+            for (
+                  ; kb_state < di->state + 256
+                  ; kb_state++)
+               *kb_state = 0;
          }
       }
    }
@@ -212,6 +219,7 @@ static void dinput_poll(void *data)
    {
       POINT point;
       DIMOUSESTATE2 mouse_state;
+      BYTE *rgb_buttons_ptr     = &mouse_state.rgbButtons[0];
       
       point.x = 0;
       point.y = 0;
@@ -219,8 +227,11 @@ static void dinput_poll(void *data)
       mouse_state.lX = 0;
       mouse_state.lY = 0;
       mouse_state.lZ = 0;
-      for (i = 0; i < 8; i++)
-         mouse_state.rgbButtons[i] = 0;
+
+      for (
+            ; rgb_buttons_ptr < mouse_state.rgbButtons + 8
+            ; rgb_buttons_ptr++)
+         *rgb_buttons_ptr = 0;
 
       if (FAILED(IDirectInputDevice8_GetDeviceState(
                   di->mouse, sizeof(mouse_state), &mouse_state)))
@@ -232,8 +243,10 @@ static void dinput_poll(void *data)
             mouse_state.lX = 0;
             mouse_state.lY = 0;
             mouse_state.lZ = 0;
-            for (i = 0; i < 8; i++)
-               mouse_state.rgbButtons[i] = 0;
+            for (
+                  ; rgb_buttons_ptr < mouse_state.rgbButtons + 8
+                  ; rgb_buttons_ptr++)
+               *rgb_buttons_ptr = 0;
          }
       }
 
@@ -783,25 +796,24 @@ static void dinput_add_pointer(struct dinput_input *di,
 {
    struct pointer_status *insert_pos = NULL;
 
-   new_pointer->next = NULL;
-   insert_pos = &di->pointer_head;
+   new_pointer->next                 = NULL;
+   insert_pos                        = &di->pointer_head;
 
    while (insert_pos->next)
-      insert_pos = insert_pos->next;
-   insert_pos->next = new_pointer;
+      insert_pos                     = insert_pos->next;
+   insert_pos->next                  = new_pointer;
 }
 
 static void dinput_delete_pointer(struct dinput_input *di, int pointer_id)
 {
-   struct pointer_status *check_pos = &di->pointer_head;
+   struct pointer_status *check_pos  = &di->pointer_head;
 
    while (check_pos && check_pos->next)
    {
       if (check_pos->next->pointer_id == pointer_id)
       {
          struct pointer_status *to_delete = check_pos->next;
-
-         check_pos->next = check_pos->next->next;
+         check_pos->next                  = check_pos->next->next;
          free(to_delete);
       }
       check_pos = check_pos->next;

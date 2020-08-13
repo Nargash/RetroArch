@@ -114,20 +114,8 @@ enum rarch_input_keyboard_ctl_state
 
 struct retro_keybind
 {
-   bool valid;
-   uint16_t id;
-   enum msg_hash_enums enum_idx;
-   enum retro_key key;
-
-   uint16_t mbutton;
-
-   /* Joypad key. Joypad POV (hats)
-    * are embedded into this key as well. */
-   uint16_t joykey;
-
-   /* Default key binding value -
-    * for resetting bind to default */
-   uint16_t def_joykey;
+   char     *joykey_label;
+   char     *joyaxis_label;
 
    /* Joypad axis. Negative and positive axes
     * are embedded into this variable. */
@@ -140,28 +128,42 @@ struct retro_keybind
    /* Used by input_{push,pop}_analog_dpad(). */
    uint32_t orig_joyaxis;
 
-   char     *joykey_label;
-   char     *joyaxis_label;
+   enum msg_hash_enums enum_idx;
+   enum retro_key key;
+
+   uint16_t id;
+
+   uint16_t mbutton;
+
+   /* Joypad key. Joypad POV (hats)
+    * are embedded into this key as well. */
+   uint16_t joykey;
+
+   /* Default key binding value -
+    * for resetting bind to default */
+   uint16_t def_joykey;
+
+   bool valid;
 };
 
 struct rarch_joypad_info
 {
-   uint16_t joy_idx;
    const struct retro_keybind *auto_binds;
    float axis_threshold;
+   uint16_t joy_idx;
 };
 
 typedef struct
 {
+   unsigned name_index;
+   uint16_t vid;
+   uint16_t pid;
+   char joypad_driver[32];
    char name[256];
    char display_name[256];
    char config_path[PATH_MAX_LENGTH];
    char config_name[PATH_MAX_LENGTH];
-   char joypad_driver[32];
-   uint16_t vid;
-   uint16_t pid;
    bool autoconfigured;
-   unsigned name_index;
 } input_device_info_t;
 
 struct input_driver

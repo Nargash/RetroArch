@@ -54,38 +54,27 @@
 
 struct content_playlist
 {
-   bool modified;
-   bool old_format;
-   bool compressed;
-   bool cached_external;
+   char *default_core_path;
+   char *default_core_name;
+   char *base_content_directory;
+
+   struct playlist_entry *entries;
+
+   playlist_config_t config;  /* size_t alignment */
 
    enum playlist_label_display_mode label_display_mode;
    enum playlist_thumbnail_mode right_thumbnail_mode;
    enum playlist_thumbnail_mode left_thumbnail_mode;
    enum playlist_sort_mode sort_mode;
 
-   char *default_core_path;
-   char *default_core_name;
-   char *base_content_directory;
-
-   struct playlist_entry *entries;
-   playlist_config_t config;
+   bool modified;
+   bool old_format;
+   bool compressed;
+   bool cached_external;
 };
 
 typedef struct
 {
-   bool in_items;
-   bool in_subsystem_roms;
-   bool capacity_exceeded;
-   bool out_of_memory;
-
-   unsigned array_depth;
-   unsigned object_depth;
-
-   JSON_Parser parser;
-   JSON_Writer writer;
-   intfstream_t *file;
-   playlist_t *playlist;
    struct playlist_entry *current_entry;
    char *current_meta_string;
    char *current_items_string;
@@ -97,6 +86,18 @@ typedef struct
    enum playlist_label_display_mode *current_meta_label_display_mode_val;
    enum playlist_thumbnail_mode *current_meta_thumbnail_mode_val;
    enum playlist_sort_mode *current_meta_sort_mode_val;
+   intfstream_t *file;
+   playlist_t *playlist;
+   JSON_Parser parser;     /* ptr alignment */
+   JSON_Writer writer;     /* ptr alignment */
+
+   unsigned array_depth;
+   unsigned object_depth;
+
+   bool in_items;
+   bool in_subsystem_roms;
+   bool capacity_exceeded;
+   bool out_of_memory;
 } JSONContext;
 
 /* TODO/FIXME - global state - perhaps move outside this file */
@@ -194,15 +195,15 @@ static void path_replace_base_path_and_convert_to_local_file_system(
             strlen(in_path) - in_oldrefpath_length + 1);
 
 #ifdef USING_WINDOWS_FILE_SYSTEM
-      /* If we are running under a win fs, '/' characters
-       * are not allowed anywhere. we replace with '\' and
-       * hope for the best... */
+      /* If we are running under a Windows filesystem,
+       * '/' characters are not allowed anywhere. 
+       * We replace with '\' and hope for the best... */
       string_replace_all_chars(out_path,
             POSIX_PATH_DELIMITER, WINDOWS_PATH_DELIMITER);
 #endif
 
 #ifdef USING_POSIX_FILE_SYSTEM
-      /* Under posix fs, we replace '\' characters with '/' */
+      /* Under POSIX filesystem, we replace '\' characters with '/' */
       string_replace_all_chars(out_path,
             WINDOWS_PATH_DELIMITER, POSIX_PATH_DELIMITER);
 #endif
@@ -232,7 +233,7 @@ static bool playlist_path_equal(const char *real_path,
    entry_real_path[0] = '\0';
 
    /* Sanity check */
-   if (string_is_empty(real_path) ||
+   if (string_is_empty(real_path)  ||
        string_is_empty(entry_path) ||
        !config)
       return false;
@@ -2728,8 +2729,6 @@ playlist_t *playlist_init(const playlist_config_t *config)
    {
       if (!string_is_empty(playlist->base_content_directory))
       {
-         size_t playlist_base_content_directory_length = strlen(playlist->base_content_directory);
-         size_t new_base_content_directory_length = strlen(playlist->config.base_content_directory);
          size_t i, j, len;
          char tmp_entry_path[PATH_MAX_LENGTH];
 

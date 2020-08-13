@@ -866,12 +866,25 @@ int generic_action_ok_displaylist_push(const char *path,
          dl_type            = DISPLAYLIST_FILE_BROWSER_SELECT_FILE;
          break;
       case ACTION_OK_DL_REMAP_FILE:
-         filebrowser_clear_type();
-         info.type          = type;
-         info.directory_ptr = idx;
-         info_path          = settings->paths.directory_input_remapping;
-         info_label         = label;
-         dl_type            = DISPLAYLIST_FILE_BROWSER_SELECT_FILE;
+         {
+            struct retro_system_info *system     = runloop_get_libretro_system_info();
+            const char *core_name                = system ? system->library_name : NULL;
+
+            if (!string_is_empty(core_name) && !string_is_empty(settings->paths.directory_input_remapping))
+            {
+               fill_pathname_join(tmp,
+                     settings->paths.directory_input_remapping, core_name, sizeof(tmp));
+               if (!path_is_directory(tmp))
+                  tmp[0] = '\0';
+            }
+
+            filebrowser_clear_type();
+            info.type          = type;
+            info.directory_ptr = idx;
+            info_path          = !string_is_empty(tmp) ? tmp : settings->paths.directory_input_remapping;
+            info_label         = label;
+            dl_type            = DISPLAYLIST_FILE_BROWSER_SELECT_FILE;
+         }
          break;
       case ACTION_OK_DL_STREAM_CONFIGFILE:
          {
@@ -1454,35 +1467,34 @@ static int file_load_with_detect_core_wrapper(
       const char *path, const char *label,
       unsigned type, bool is_carchive)
 {
-   menu_content_ctx_defer_info_t def_info;
    int ret                             = 0;
-   char *new_core_path                 = NULL;
-   const char *menu_path               = NULL;
-   const char *menu_label              = NULL;
-   core_info_list_t *list              = NULL;
    menu_handle_t *menu                 = menu_driver_get_ptr();
 
    if (!menu)
       return menu_cbs_exit();
 
    {
-      char *menu_path_new = (char*)malloc(PATH_MAX_LENGTH * sizeof(char));
-      new_core_path       = (char*)malloc(PATH_MAX_LENGTH * sizeof(char));
+      menu_content_ctx_defer_info_t def_info;
+      char menu_path_new[PATH_MAX_LENGTH];
+      char new_core_path[PATH_MAX_LENGTH];
+      const char *menu_path                  = NULL;
+      const char *menu_label                 = NULL;
+      core_info_list_t *list                 = NULL;
       new_core_path[0]    = menu_path_new[0] = '\0';
 
       menu_entries_get_last_stack(&menu_path, &menu_label, NULL, NULL, NULL);
 
       if (!string_is_empty(menu_path))
-         strlcpy(menu_path_new, menu_path, PATH_MAX_LENGTH * sizeof(char));
+         strlcpy(menu_path_new, menu_path, sizeof(menu_path_new));
 
       if (string_is_equal(menu_label,
                msg_hash_to_str(MENU_ENUM_LABEL_DEFERRED_ARCHIVE_OPEN_DETECT_CORE)))
-         fill_pathname_join(menu_path_new, menu->scratch2_buf, menu->scratch_buf,
-               PATH_MAX_LENGTH * sizeof(char));
+         fill_pathname_join(menu_path_new,
+               menu->scratch2_buf, menu->scratch_buf, sizeof(menu_path_new));
       else if (string_is_equal(menu_label,
                msg_hash_to_str(MENU_ENUM_LABEL_DEFERRED_ARCHIVE_OPEN)))
-         fill_pathname_join(menu_path_new, menu->scratch2_buf, menu->scratch_buf,
-               PATH_MAX_LENGTH * sizeof(char));
+         fill_pathname_join(menu_path_new,
+               menu->scratch2_buf, menu->scratch_buf, sizeof(menu_path_new));
 
       core_info_get_list(&list);
 
@@ -1494,7 +1506,7 @@ static int file_load_with_detect_core_wrapper(
       def_info.len        = sizeof(menu->deferred_path);
 
       if (menu_content_find_first_core(&def_info, false, new_core_path,
-               PATH_MAX_LENGTH * sizeof(char)))
+               sizeof(new_core_path)))
          ret = -1;
 
       if (     !is_carchive && !string_is_empty(path)
@@ -1503,14 +1515,9 @@ static int file_load_with_detect_core_wrapper(
                menu_path_new, path,
                sizeof(menu->detect_content_path));
 
-      free(menu_path_new);
-
       if (enum_label_idx == MENU_ENUM_LABEL_COLLECTION)
-      {
-         free(new_core_path);
          return generic_action_ok_displaylist_push(path, NULL,
                NULL, 0, idx, entry_idx, ACTION_OK_DL_DEFERRED_CORE_LIST_SET);
-      }
 
       switch (ret)
       {
@@ -1528,10 +1535,8 @@ static int file_load_with_detect_core_wrapper(
                         &content_info,
                         CORE_TYPE_PLAIN,
                         NULL, NULL))
-               {
-                  free(new_core_path);
                   return -1;
-               }
+
                content_add_to_playlist(def_info.s);
 
                ret = 0;
@@ -1546,7 +1551,6 @@ static int file_load_with_detect_core_wrapper(
       }
    }
 
-   free(new_core_path);
    return ret;
 }
 
@@ -1777,12 +1781,33 @@ static int generic_action_ok(const char *path,
       case ACTION_OK_LOAD_REMAPPING_FILE:
 #ifdef HAVE_CONFIGFILE
          {
-            config_file_t *conf = config_file_new_from_path_to_string(
+            config_file_t     *conf = config_file_new_from_path_to_string(
                   action_path);
-            flush_char          = msg_hash_to_str(flush_id);
+            retro_ctx_controller_info_t pad;
+            unsigned current_device = 0;
+            unsigned port           = 0;
+            int conf_val            = 0;
+            char conf_key[64];
+            flush_char              = msg_hash_to_str(flush_id);
+
+            conf_key[0]             = '\0';
 
             if (conf)
-               input_remapping_load_file(conf, action_path);
+               if (input_remapping_load_file(conf, action_path))
+               {
+                  for (port = 0; port < MAX_USERS; port++)
+                  {
+                     snprintf(conf_key, sizeof(conf_key), "input_libretro_device_p%u", port + 1);
+                     if (!config_get_int(conf, conf_key, &conf_val))
+                        continue;
+
+                     current_device = input_config_get_device(port);
+                     input_config_set_device(port, current_device);
+                     pad.port   = port;
+                     pad.device = current_device;
+                     core_set_controller_port_device(&pad);
+                  }
+               }
          }
 #endif
          break;
@@ -1822,13 +1847,20 @@ static int generic_action_ok(const char *path,
       case ACTION_OK_SET_DIRECTORY:
          flush_char = msg_hash_to_str(MENU_ENUM_LABEL_DEFERRED_DIRECTORY_SETTINGS_LIST);
 #ifdef HAVE_COCOATOUCH
-         // For iOS, set the path using realpath because the path name
-         // can start with /private and this ensures the path starts with it.
-         // This will allow the path to be properly substituted when fill_pathname_expand_special
-         // is called.
-         char real_action_path[PATH_MAX_LENGTH] = {0};
-         realpath(action_path, real_action_path);
-         strlcpy(action_path, real_action_path, sizeof(action_path));
+         /* For iOS, set the path using realpath because the 
+          * path name can start with /private and this ensures 
+          * the path starts with it.
+          *
+          * This will allow the path to be properly substituted 
+          * when fill_pathname_expand_special
+          * is called.
+          */
+         {
+            char real_action_path[PATH_MAX_LENGTH];
+            real_action_path[0] = '\0';
+            realpath(action_path, real_action_path);
+            strlcpy(action_path, real_action_path, sizeof(action_path));
+         }
 #endif
          ret        = set_path_generic(menu->filebrowser_label, action_path);
          break;
@@ -2528,7 +2560,7 @@ static int action_ok_audio_add_to_mixer_and_collection(const char *path,
    struct playlist_entry entry = {0};
    menu_handle_t *menu         = menu_driver_get_ptr();
 
-   combined_path[0] = '\0';
+   combined_path[0]            = '\0';
 
    if (!menu)
       return menu_cbs_exit();
@@ -2559,7 +2591,7 @@ static int action_ok_audio_add_to_mixer_and_collection_and_play(const char *path
    struct playlist_entry entry = {0};
    menu_handle_t *menu         = menu_driver_get_ptr();
 
-   combined_path[0] = '\0';
+   combined_path[0]            = '\0';
 
    if (!menu)
       return menu_cbs_exit();
@@ -3180,12 +3212,12 @@ static int action_ok_path_scan_directory(const char *path,
 static int action_ok_path_manual_scan_directory(const char *path,
       const char *label, unsigned type, size_t idx, size_t entry_idx)
 {
+   char content_dir[PATH_MAX_LENGTH];
    const char *flush_char = msg_hash_to_str(MENU_ENUM_LABEL_DEFERRED_MANUAL_CONTENT_SCAN_LIST);
    unsigned flush_type    = 0;
    const char *menu_path  = NULL;
-   char content_dir[PATH_MAX_LENGTH];
 
-   content_dir[0] = '\0';
+   content_dir[0]         = '\0';
 
    /* 'Reset' file browser */
    filebrowser_clear_type();
@@ -3203,7 +3235,8 @@ static int action_ok_path_manual_scan_directory(const char *path,
        * can start with /private and this ensures the path starts with it.
        * This will allow the path to be properly substituted when
        * fill_pathname_expand_special() is called. */
-      char real_content_dir[PATH_MAX_LENGTH] = {0};
+      char real_content_dir[PATH_MAX_LENGTH];
+      real_content_dir[0] = '\0';
       realpath(content_dir, real_content_dir);
       strlcpy(content_dir, real_content_dir, sizeof(content_dir));
    }
@@ -3325,8 +3358,10 @@ static int action_ok_set_switch_cpu_profile(const char *path,
 static int action_ok_set_switch_gpu_profile(const char *path,
       const char *label, unsigned type, size_t idx, size_t entry_idx)
 {
-   char            *profile_name = SWITCH_GPU_PROFILES[entry_idx];
-   char command[PATH_MAX_LENGTH] = {0};
+   char command[PATH_MAX_LENGTH];
+   char            *profile_name  = SWITCH_GPU_PROFILES[entry_idx];
+
+   command[0]                     = '\0';
 
    snprintf(command, sizeof(command),
          "gpu-profile set '%s'",
@@ -4003,7 +4038,7 @@ static int action_ok_core_updater_list(const char *path,
 
    if (!core_list)
    {
-      core_updater_list_init_cached(CORE_UPDATER_LIST_SIZE);
+      core_updater_list_init_cached();
       core_list = core_updater_list_get_cached();
 
       if (!core_list)
@@ -4213,13 +4248,10 @@ void cb_generic_download(retro_task_t *task,
          dir_path = LAKKA_UPDATE_DIR;
          break;
       case MENU_ENUM_LABEL_CB_DISCORD_AVATAR:
-      {
-         fill_pathname_application_special(buf,
-            PATH_MAX_LENGTH * sizeof(char),
-            APPLICATION_SPECIAL_DIRECTORY_THUMBNAILS_DISCORD_AVATARS);
+         fill_pathname_application_special(buf, sizeof(buf),
+               APPLICATION_SPECIAL_DIRECTORY_THUMBNAILS_DISCORD_AVATARS);
          dir_path = buf;
          break;
-      }
       default:
          RARCH_WARN("Unknown transfer type '%s' bailing out.\n",
                msg_hash_to_str(transf->enum_idx));
@@ -4630,12 +4662,12 @@ static int action_ok_add_to_favorites(const char *path,
       char core_name[PATH_MAX_LENGTH];
 
       content_label[0] = '\0';
-      core_path[0] = '\0';
-      core_name[0] = '\0';
+      core_path[0]     = '\0';
+      core_name[0]     = '\0';
 
       /* Create string list container for playlist parameters */
-      attr.i = 0;
-      str_list = string_list_new();
+      attr.i           = 0;
+      str_list         = string_list_new();
       if (!str_list)
          return 0;
 
@@ -6020,12 +6052,12 @@ static int action_ok_load_archive(const char *path,
 static int action_ok_load_archive_detect_core(const char *path,
       const char *label, unsigned type, size_t idx, size_t entry_idx)
 {
+   char new_core_path[PATH_MAX_LENGTH];
    menu_content_ctx_defer_info_t def_info;
    int ret                             = 0;
    core_info_list_t *list              = NULL;
    const char *menu_path               = NULL;
    const char *content_path            = NULL;
-   char *new_core_path                 = NULL;
    menu_handle_t *menu                 = menu_driver_get_ptr();
 
    if (!menu)
@@ -6043,12 +6075,10 @@ static int action_ok_load_archive_detect_core(const char *path,
    def_info.s          = menu->deferred_path;
    def_info.len        = sizeof(menu->deferred_path);
 
-   new_core_path       = (char*)
-      malloc(PATH_MAX_LENGTH * sizeof(char));
    new_core_path[0]    = '\0';
 
    if (menu_content_find_first_core(&def_info, false,
-            new_core_path, PATH_MAX_LENGTH * sizeof(char)))
+            new_core_path, sizeof(new_core_path)))
       ret = -1;
 
    fill_pathname_join(menu->detect_content_path, menu_path, content_path,
@@ -6085,7 +6115,6 @@ static int action_ok_load_archive_detect_core(const char *path,
          break;
    }
 
-   free(new_core_path);
    return ret;
 }
 
@@ -6306,6 +6335,7 @@ static int action_ok_disk_cycle_tray_status(const char *path,
 static int action_ok_disk_image_append(const char *path,
       const char *label, unsigned type, size_t idx, size_t entry_idx)
 {
+   char image_path[PATH_MAX_LENGTH];
    rarch_system_info_t *sys_info = runloop_get_system_info();
    menu_handle_t *menu           = menu_driver_get_ptr();
    const char *menu_path         = NULL;
@@ -6315,9 +6345,8 @@ static int action_ok_disk_image_append(const char *path,
    bool audio_enable_menu_ok     = settings->bools.audio_enable_menu_ok;
 #endif
    bool menu_insert_disk_resume  = settings->bools.menu_insert_disk_resume;
-   char image_path[PATH_MAX_LENGTH];
 
-   image_path[0] = '\0';
+   image_path[0]                 = '\0';
 
    if (!menu)
       return menu_cbs_exit();

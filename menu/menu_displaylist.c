@@ -1582,17 +1582,15 @@ static int create_string_list_rdb_entry_string(
       file_list_t *list)
 {
    union string_list_elem_attr attr;
-   char *tmp                        = NULL;
+   char tmp[PATH_MAX_LENGTH];
    char *output_label               = NULL;
    int str_len                      = 0;
    struct string_list *str_list     = string_list_new();
-   size_t path_size                 = PATH_MAX_LENGTH * sizeof(char);
 
    if (!str_list)
       return -1;
 
    attr.i                           = 0;
-   tmp                              = (char*)malloc(path_size);
    tmp[0]                           = '\0';
 
    str_len += strlen(label) + 1;
@@ -1609,7 +1607,6 @@ static int create_string_list_rdb_entry_string(
    if (!output_label)
    {
       string_list_free(str_list);
-      free(tmp);
       return -1;
    }
 
@@ -1617,13 +1614,12 @@ static int create_string_list_rdb_entry_string(
    string_list_free(str_list);
 
    fill_pathname_join_concat_noext(tmp, desc, ": ",
-         actual_string, path_size);
+         actual_string, sizeof(tmp));
    menu_entries_append_enum(list, tmp, output_label,
          enum_idx,
          0, 0, 0);
 
    free(output_label);
-   free(tmp);
 
    return 0;
 }
@@ -3250,23 +3246,18 @@ static unsigned menu_displaylist_parse_cores(
 #endif
 
    {
-      char *out_dir = (char*)malloc(PATH_MAX_LENGTH * sizeof(char));
+      char out_dir[PATH_MAX_LENGTH];
 
       out_dir[0] = '\0';
 
-      fill_pathname_parent_dir(out_dir, path,
-            PATH_MAX_LENGTH * sizeof(char));
+      fill_pathname_parent_dir(out_dir, path, sizeof(out_dir));
 
       if (string_is_empty(out_dir))
-      {
          menu_entries_prepend(info->list,
                msg_hash_to_str(MENU_ENUM_LABEL_VALUE_PARENT_DIRECTORY),
                path,
                MENU_ENUM_LABEL_PARENT_DIRECTORY,
                FILE_TYPE_PARENT_DIRECTORY, 0, 0);
-      }
-
-      free(out_dir);
    }
 
    if (!str_list)
@@ -3388,20 +3379,16 @@ static unsigned menu_displaylist_parse_cores(
 
          if (type == FILE_TYPE_CORE)
          {
-            size_t path_size   = PATH_MAX_LENGTH * sizeof(char);
-            char *core_path    = (char*)malloc(path_size);
-            char *display_name = (char*)malloc(path_size);
+            char core_path[PATH_MAX_LENGTH];
+            char display_name[PATH_MAX_LENGTH];
             core_path[0]       =
             display_name[0]    = '\0';
 
-            fill_pathname_join(core_path, dir, path, path_size);
+            fill_pathname_join(core_path, dir, path, sizeof(core_path));
 
             if (core_info_list_get_display_name(list,
-                     core_path, display_name, path_size))
+                     core_path, display_name, sizeof(display_name)))
                file_list_set_alt_at_offset(info->list, i, display_name);
-
-            free(core_path);
-            free(display_name);
          }
       }
       info->need_sort = true;
@@ -6760,7 +6747,7 @@ unsigned menu_displaylist_build_list(
             {
                unsigned user;
                unsigned max_users          = *(input_driver_get_uint(INPUT_ACTION_MAX_USERS));
-               for(user = 0; user < max_users; user++)
+               for (user = 0; user < max_users; user++)
                {
                   if (MENU_DISPLAYLIST_PARSE_SETTINGS_ENUM(list,
                            (enum msg_hash_enums)(
@@ -7956,6 +7943,8 @@ unsigned menu_displaylist_build_list(
             menu_displaylist_build_info_t build_list[] = {
                {MENU_ENUM_LABEL_SORT_SAVEFILES_ENABLE, PARSE_ONLY_BOOL},
                {MENU_ENUM_LABEL_SORT_SAVESTATES_ENABLE,  PARSE_ONLY_BOOL},
+               {MENU_ENUM_LABEL_SORT_SAVEFILES_BY_CONTENT_ENABLE, PARSE_ONLY_BOOL},
+               {MENU_ENUM_LABEL_SORT_SAVESTATES_BY_CONTENT_ENABLE,  PARSE_ONLY_BOOL},
                {MENU_ENUM_LABEL_BLOCK_SRAM_OVERWRITE,  PARSE_ONLY_BOOL},
                {MENU_ENUM_LABEL_AUTOSAVE_INTERVAL,  PARSE_ONLY_UINT},
                {MENU_ENUM_LABEL_SAVESTATE_AUTO_INDEX,  PARSE_ONLY_BOOL},
@@ -7964,6 +7953,7 @@ unsigned menu_displaylist_build_list(
                {MENU_ENUM_LABEL_SAVESTATE_THUMBNAIL_ENABLE,   PARSE_ONLY_BOOL},
                {MENU_ENUM_LABEL_SAVE_FILE_COMPRESSION,        PARSE_ONLY_BOOL},
                {MENU_ENUM_LABEL_SAVESTATE_FILE_COMPRESSION,   PARSE_ONLY_BOOL},
+               {MENU_ENUM_LABEL_SORT_SCREENSHOTS_BY_CONTENT_ENABLE,  PARSE_ONLY_BOOL},
                {MENU_ENUM_LABEL_SAVEFILES_IN_CONTENT_DIR_ENABLE,   PARSE_ONLY_BOOL},
                {MENU_ENUM_LABEL_SAVESTATES_IN_CONTENT_DIR_ENABLE,   PARSE_ONLY_BOOL},
                {MENU_ENUM_LABEL_SYSTEMFILES_IN_CONTENT_DIR_ENABLE,   PARSE_ONLY_BOOL},
@@ -9011,7 +9001,7 @@ bool menu_displaylist_ctl(enum menu_displaylist_ctl_state type,
                         key_type, PARSE_ONLY_UINT, true, 0) == 0)
                   count++;
                if (MENU_DISPLAYLIST_PARSE_SETTINGS(list,
-                        key_analog, PARSE_ONLY_UINT, true, 0) == 0)
+                        key_analog, PARSE_ONLY_UINT, true, MENU_SETTINGS_INPUT_ANALOG_DPAD_MODE) == 0)
                   count++;
             }
 
@@ -9083,8 +9073,9 @@ bool menu_displaylist_ctl(enum menu_displaylist_ctl_state type,
                         const struct retro_keybind *keyptr =
                            &input_config_binds[p][retro_id];
 
-                        strlcpy(descriptor,
-                              msg_hash_to_str(keyptr->enum_idx), sizeof(descriptor));
+                        snprintf(desc_label, sizeof(desc_label),
+                              "%s %s", msg_hash_to_str(keyptr->enum_idx), descriptor);
+                        strlcpy(descriptor, desc_label, sizeof(descriptor));
                      }
 
                      /* Add user index when display driver == rgui and sublabels
@@ -9966,9 +9957,11 @@ bool menu_displaylist_ctl(enum menu_displaylist_ctl_state type,
          menu_entries_ctl(MENU_ENTRIES_CTL_CLEAR, info->list);
 #ifdef HAVE_NETWORKING
          {
-            core_updater_list_t *core_list = core_updater_list_get_cached();
-            settings_t *settings           = config_get_ptr();
-            bool show_experimental_cores   = settings->bools.network_buildbot_show_experimental_cores;
+            core_updater_list_t *core_list   = core_updater_list_get_cached();
+            struct string_list *search_terms = menu_driver_search_get_terms();
+            settings_t *settings             = config_get_ptr();
+            bool show_experimental_cores     = settings->bools.network_buildbot_show_experimental_cores;
+            size_t selection                 = menu_navigation_get_selection();
 
             if (core_list)
             {
@@ -9990,6 +9983,30 @@ bool menu_displaylist_ctl(enum menu_displaylist_ctl_state type,
                               !path_is_valid(entry->local_core_path)))
                         continue;
 
+                     /* If a search is active, skip non-matching
+                      * entries */
+                     if (search_terms)
+                     {
+                        bool entry_valid = true;
+                        size_t j;
+
+                        for (j = 0; j < search_terms->size; j++)
+                        {
+                           const char *search_term = search_terms->elems[j].data;
+
+                           if (!string_is_empty(search_term) &&
+                               !string_is_empty(entry->display_name) &&
+                               !strcasestr(entry->display_name, search_term))
+                           {
+                              entry_valid = false;
+                              break;
+                           }
+                        }
+
+                        if (!entry_valid)
+                           continue;
+                     }
+
                      if (menu_entries_append_enum(info->list,
                            entry->remote_filename,
                            "",
@@ -10005,6 +10022,9 @@ bool menu_displaylist_ctl(enum menu_displaylist_ctl_state type,
                   }
                }
             }
+
+            if (selection >= count)
+               info->need_clear = true;
          }
 #endif
          if (count == 0)

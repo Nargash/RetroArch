@@ -42,8 +42,8 @@
  * an image load */
 typedef struct
 {
-   gfx_thumbnail_t *thumbnail;
    uint64_t list_id;
+   gfx_thumbnail_t *thumbnail;
 } gfx_thumbnail_tag_t;
 
 /* Setters */
@@ -201,15 +201,13 @@ static void gfx_thumbnail_handle_upload(
    fade_enabled = true;
 
    /* Check we have a valid image */
-   if (!img)
-      goto end;
-
-   if ((img->width < 1) || (img->height < 1))
+   if (!img || (img->width < 1) || (img->height < 1))
       goto end;
 
    /* Upload texture to GPU */
    if (!video_driver_texture_load(
-            img, TEXTURE_FILTER_MIPMAP_LINEAR, &thumbnail_tag->thumbnail->texture))
+            img, TEXTURE_FILTER_MIPMAP_LINEAR,
+            &thumbnail_tag->thumbnail->texture))
       goto end;
 
    /* Cache dimensions */
@@ -777,7 +775,7 @@ void gfx_thumbnail_draw(
       draw.matrix_data     = &mymat;
       draw.texture         = thumbnail->texture;
       draw.prim_type       = GFX_DISPLAY_PRIM_TRIANGLESTRIP;
-      draw.pipeline.id     = 0;
+      draw.pipeline_id     = 0;
 
       /* Set thumbnail alignment within bounding box */
       switch (alignment)

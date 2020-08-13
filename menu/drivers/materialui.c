@@ -108,6 +108,7 @@ typedef struct
    uint32_t header_shadow;
    uint32_t landscape_border_shadow;
    uint32_t status_bar_shadow;
+   uint32_t selection_marker_shadow;
    uint32_t scrollbar;
    uint32_t divider;
    uint32_t screen_fade;
@@ -115,6 +116,7 @@ typedef struct
    float header_shadow_opacity;
    float landscape_border_shadow_opacity;
    float status_bar_shadow_opacity;
+   float selection_marker_shadow_opacity;
    float screen_fade_opacity;
 } materialui_theme_t;
 
@@ -151,6 +153,7 @@ static const materialui_theme_t materialui_theme_blue = {
    0x000000, /* header_shadow */
    0x000000, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x000000, /* selection_marker_shadow */
    0x0069c0, /* scrollbar */
    0x9ea7aa, /* divider */
    0x000000, /* screen_fade */
@@ -158,6 +161,7 @@ static const materialui_theme_t materialui_theme_blue = {
    0.3f,     /* header_shadow_opacity */
    0.35f,    /* landscape_border_shadow_opacity */
    0.45f,    /* status_bar_shadow_opacity */
+   0.1f,     /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -194,6 +198,7 @@ static const materialui_theme_t materialui_theme_blue_grey = {
    0x000000, /* header_shadow */
    0x000000, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x000000, /* selection_marker_shadow */
    0x34515e, /* scrollbar */
    0xc2c2c2, /* divider */
    0x000000, /* screen_fade */
@@ -201,6 +206,7 @@ static const materialui_theme_t materialui_theme_blue_grey = {
    0.3f,     /* header_shadow_opacity */
    0.35f,    /* landscape_border_shadow_opacity */
    0.45f,    /* status_bar_shadow_opacity */
+   0.2f,     /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -237,6 +243,7 @@ static const materialui_theme_t materialui_theme_dark_blue = {
    0x000000, /* header_shadow */
    0x3B3B3B, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x3B3B3B, /* selection_marker_shadow */
    0x90caf9, /* scrollbar */
    0x607d8b, /* divider */
    0x000000, /* screen_fade */
@@ -244,6 +251,7 @@ static const materialui_theme_t materialui_theme_dark_blue = {
    0.3f,     /* header_shadow_opacity */
    0.45f,    /* landscape_border_shadow_opacity */
    0.8f,     /* status_bar_shadow_opacity */
+   0.2f,     /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -280,6 +288,7 @@ static const materialui_theme_t materialui_theme_green = {
    0x000000, /* header_shadow */
    0x000000, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x000000, /* selection_marker_shadow */
    0x087f23, /* scrollbar */
    0xaabb97, /* divider */
    0x000000, /* screen_fade */
@@ -287,6 +296,7 @@ static const materialui_theme_t materialui_theme_green = {
    0.3f,     /* header_shadow_opacity */
    0.35f,    /* landscape_border_shadow_opacity */
    0.45f,    /* status_bar_shadow_opacity */
+   0.15f,     /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -323,6 +333,7 @@ static const materialui_theme_t materialui_theme_red = {
    0x000000, /* header_shadow */
    0x000000, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x000000, /* selection_marker_shadow */
    0xba000d, /* scrollbar */
    0xbf5f82, /* divider */
    0x000000, /* screen_fade */
@@ -330,6 +341,7 @@ static const materialui_theme_t materialui_theme_red = {
    0.3f,     /* header_shadow_opacity */
    0.35f,    /* landscape_border_shadow_opacity */
    0.45f,    /* status_bar_shadow_opacity */
+   0.15f,    /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -366,6 +378,7 @@ static const materialui_theme_t materialui_theme_yellow = {
    0x000000, /* header_shadow */
    0x000000, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x33311A, /* selection_marker_shadow */
    0xc6a700, /* scrollbar */
    0xcbba83, /* divider */
    0x000000, /* screen_fade */
@@ -373,6 +386,7 @@ static const materialui_theme_t materialui_theme_yellow = {
    0.3f,     /* header_shadow_opacity */
    0.35f,    /* landscape_border_shadow_opacity */
    0.45f,    /* status_bar_shadow_opacity */
+   0.15f,     /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -409,6 +423,7 @@ static const materialui_theme_t materialui_theme_nvidia_shield = {
    0x000000, /* header_shadow */
    0x3B3B3B, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x3B3B3B, /* selection_marker_shadow */
    0x7ab547, /* scrollbar */
    0x498515, /* divider */
    0x000000, /* screen_fade */
@@ -416,6 +431,7 @@ static const materialui_theme_t materialui_theme_nvidia_shield = {
    0.3f,     /* header_shadow_opacity */
    0.45f,    /* landscape_border_shadow_opacity */
    0.8f,     /* status_bar_shadow_opacity */
+   0.2f,     /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -452,6 +468,7 @@ static const materialui_theme_t materialui_theme_materialui = {
    0x000000, /* header_shadow */
    0x000000, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x000000, /* selection_marker_shadow */
    0x018786, /* scrollbar */
    0x018786, /* divider */
    0x000000, /* screen_fade */
@@ -459,6 +476,7 @@ static const materialui_theme_t materialui_theme_materialui = {
    0.3f,     /* header_shadow_opacity */
    0.35f,    /* landscape_border_shadow_opacity */
    0.45f,    /* status_bar_shadow_opacity */
+   0.1f,     /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -495,6 +513,7 @@ static const materialui_theme_t materialui_theme_materialui_dark = {
    0x000000, /* header_shadow */
    0x3B3B3B, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x3B3B3B, /* selection_marker_shadow */
    0xC89EFC, /* scrollbar */
    0x03DAC6, /* divider */
    0x000000, /* screen_fade */
@@ -502,6 +521,7 @@ static const materialui_theme_t materialui_theme_materialui_dark = {
    0.3f,     /* header_shadow_opacity */
    0.45f,    /* landscape_border_shadow_opacity */
    0.8f,     /* status_bar_shadow_opacity */
+   0.2f,     /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -538,6 +558,7 @@ static const materialui_theme_t materialui_theme_ozone_dark = {
    0x000000, /* header_shadow */
    0x000000, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x000000, /* selection_marker_shadow */
    0x9F9F9F, /* scrollbar */
    0xFFFFFF, /* divider */
    0x000000, /* screen_fade */
@@ -545,6 +566,7 @@ static const materialui_theme_t materialui_theme_ozone_dark = {
    0.3f,     /* header_shadow_opacity */
    0.45f,    /* landscape_border_shadow_opacity */
    0.8f,     /* status_bar_shadow_opacity */
+   0.05f,    /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -581,6 +603,7 @@ static const materialui_theme_t materialui_theme_nord = {
    0x000000, /* header_shadow */
    0x000000, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x000000, /* selection_marker_shadow */
    0xA0A5AD, /* scrollbar */
    0x81A1C1, /* divider */
    0x000000, /* screen_fade */
@@ -588,6 +611,7 @@ static const materialui_theme_t materialui_theme_nord = {
    0.4f,     /* header_shadow_opacity */
    0.45f,    /* landscape_border_shadow_opacity */
    0.8f,     /* status_bar_shadow_opacity */
+   0.35f,     /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -624,6 +648,7 @@ static const materialui_theme_t materialui_theme_gruvbox_dark = {
    0x000000, /* header_shadow */
    0x000000, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x000000, /* selection_marker_shadow */
    0x7C6F64, /* scrollbar */
    0xD5C4A1, /* divider */
    0x000000, /* screen_fade */
@@ -631,6 +656,7 @@ static const materialui_theme_t materialui_theme_gruvbox_dark = {
    0.4f,     /* header_shadow_opacity */
    0.45f,    /* landscape_border_shadow_opacity */
    0.8f,     /* status_bar_shadow_opacity */
+   0.35f,     /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -667,6 +693,7 @@ static const materialui_theme_t materialui_theme_solarized_dark = {
    0x000000, /* header_shadow */
    0x000000, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x000000, /* selection_marker_shadow */
    0x586E75, /* scrollbar */
    0x2AA198, /* divider */
    0x000000, /* screen_fade */
@@ -674,6 +701,7 @@ static const materialui_theme_t materialui_theme_solarized_dark = {
    0.4f,     /* header_shadow_opacity */
    0.45f,    /* landscape_border_shadow_opacity */
    0.8f,     /* status_bar_shadow_opacity */
+   0.35f,     /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -710,6 +738,7 @@ static const materialui_theme_t materialui_theme_cutie_blue = {
    0x000000, /* header_shadow */
    0x000000, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x000000, /* selection_marker_shadow */
    0x727272, /* scrollbar */
    0x727272, /* divider */
    0x000000, /* screen_fade */
@@ -717,6 +746,7 @@ static const materialui_theme_t materialui_theme_cutie_blue = {
    0.3f,     /* header_shadow_opacity */
    0.45f,    /* landscape_border_shadow_opacity */
    0.9f,     /* status_bar_shadow_opacity */
+   0.1f,     /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -753,6 +783,7 @@ static const materialui_theme_t materialui_theme_cutie_cyan = {
    0x000000, /* header_shadow */
    0x000000, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x000000, /* selection_marker_shadow */
    0x727272, /* scrollbar */
    0x727272, /* divider */
    0x000000, /* screen_fade */
@@ -760,6 +791,7 @@ static const materialui_theme_t materialui_theme_cutie_cyan = {
    0.3f,     /* header_shadow_opacity */
    0.45f,    /* landscape_border_shadow_opacity */
    0.9f,     /* status_bar_shadow_opacity */
+   0.1f,     /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -796,6 +828,7 @@ static const materialui_theme_t materialui_theme_cutie_green = {
    0x000000, /* header_shadow */
    0x000000, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x000000, /* selection_marker_shadow */
    0x727272, /* scrollbar */
    0x727272, /* divider */
    0x000000, /* screen_fade */
@@ -803,6 +836,7 @@ static const materialui_theme_t materialui_theme_cutie_green = {
    0.3f,     /* header_shadow_opacity */
    0.45f,    /* landscape_border_shadow_opacity */
    0.9f,     /* status_bar_shadow_opacity */
+   0.1f,     /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -839,6 +873,7 @@ static const materialui_theme_t materialui_theme_cutie_orange = {
    0x000000, /* header_shadow */
    0x000000, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x000000, /* selection_marker_shadow */
    0x727272, /* scrollbar */
    0x727272, /* divider */
    0x000000, /* screen_fade */
@@ -846,6 +881,7 @@ static const materialui_theme_t materialui_theme_cutie_orange = {
    0.3f,     /* header_shadow_opacity */
    0.45f,    /* landscape_border_shadow_opacity */
    0.9f,     /* status_bar_shadow_opacity */
+   0.1f,     /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -882,6 +918,7 @@ static const materialui_theme_t materialui_theme_cutie_pink = {
    0x000000, /* header_shadow */
    0x000000, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x000000, /* selection_marker_shadow */
    0x727272, /* scrollbar */
    0x727272, /* divider */
    0x000000, /* screen_fade */
@@ -889,6 +926,7 @@ static const materialui_theme_t materialui_theme_cutie_pink = {
    0.3f,     /* header_shadow_opacity */
    0.45f,    /* landscape_border_shadow_opacity */
    0.9f,     /* status_bar_shadow_opacity */
+   0.1f,     /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -925,6 +963,7 @@ static const materialui_theme_t materialui_theme_cutie_purple = {
    0x000000, /* header_shadow */
    0x000000, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x000000, /* selection_marker_shadow */
    0x727272, /* scrollbar */
    0x727272, /* divider */
    0x000000, /* screen_fade */
@@ -932,6 +971,7 @@ static const materialui_theme_t materialui_theme_cutie_purple = {
    0.3f,     /* header_shadow_opacity */
    0.45f,    /* landscape_border_shadow_opacity */
    0.9f,     /* status_bar_shadow_opacity */
+   0.1f,     /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -968,6 +1008,7 @@ static const materialui_theme_t materialui_theme_cutie_red = {
    0x000000, /* header_shadow */
    0x000000, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0x000000, /* selection_marker_shadow */
    0x727272, /* scrollbar */
    0x727272, /* divider */
    0x000000, /* screen_fade */
@@ -975,6 +1016,7 @@ static const materialui_theme_t materialui_theme_cutie_red = {
    0.3f,     /* header_shadow_opacity */
    0.45f,    /* landscape_border_shadow_opacity */
    0.9f,     /* status_bar_shadow_opacity */
+   0.1f,     /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -1011,6 +1053,7 @@ static const materialui_theme_t materialui_theme_virtual_boy = {
    0x000000, /* header_shadow */
    0x000000, /* landscape_border_shadow */
    0x000000, /* status_bar_shadow */
+   0xE60000, /* selection_marker_shadow */
    0xA10000, /* scrollbar */
    0xE60000, /* divider */
    0x000000, /* screen_fade */
@@ -1018,6 +1061,7 @@ static const materialui_theme_t materialui_theme_virtual_boy = {
    0.3f,     /* header_shadow_opacity */
    0.45f,    /* landscape_border_shadow_opacity */
    0.7f,     /* status_bar_shadow_opacity */
+   0.35f,    /* selection_marker_shadow_opacity */
    0.75f     /* screen_fade_opacity */
 };
 
@@ -1059,6 +1103,8 @@ typedef struct
    float landscape_border_shadow_left[16];
    float landscape_border_shadow_right[16];
    float status_bar_shadow[16];
+   float selection_marker_shadow_top[16];
+   float selection_marker_shadow_bottom[16];
    float scrollbar[16];
    float divider[16];
    float entry_divider[16];
@@ -1066,6 +1112,7 @@ typedef struct
    float missing_thumbnail_icon[16];
    float landscape_border_shadow_opacity;
    float status_bar_shadow_opacity;
+   float selection_marker_shadow_opacity;
    float screen_fade_opacity;
 } materialui_colors_t;
 
@@ -1169,21 +1216,19 @@ enum materialui_node_icon_type
  * icon data, thumbnail data, etc.) */
 typedef struct
 {
-   enum materialui_node_icon_type icon_type;
+   /* Thumbnail containers */
+   struct
+   {
+      gfx_thumbnail_t primary;   /* uintptr_t alignment */
+      gfx_thumbnail_t secondary; /* uintptr_t alignment */
+   } thumbnails;
    unsigned icon_texture_index;
    float entry_width;
    float entry_height;
    float text_height;
    float x;
    float y;
-
-   /* Thumbnail containers */
-   struct
-   {
-      gfx_thumbnail_t primary;
-      gfx_thumbnail_t secondary;
-   } thumbnails;
-
+   enum materialui_node_icon_type icon_type;
 } materialui_node_t;
 
 /* Defines all standard menu textures */
@@ -1266,9 +1311,9 @@ enum
  * menu entries) */
 typedef struct
 {
-   bool enabled;
    unsigned border_width;
    unsigned entry_margin;
+   bool enabled;
 } materialui_landscape_optimization_t;
 
 /* Maximum number of menu tabs that can be shown on
@@ -1311,8 +1356,8 @@ enum materialui_nav_bar_location_type
  * associated with a navigation bar menu tab */
 typedef struct
 {
-   enum materialui_nav_bar_menu_tab_type type;
    unsigned texture_index;
+   enum materialui_nav_bar_menu_tab_type type;
    bool active;
 } materialui_nav_bar_menu_tab_t;
 
@@ -1320,8 +1365,8 @@ typedef struct
  * associated with a navigation bar action tab */
 typedef struct
 {
-   enum materialui_nav_bar_action_tab_type type;
    unsigned texture_index;
+   enum materialui_nav_bar_action_tab_type type;
    bool enabled;
 } materialui_nav_bar_action_tab_t;
 
@@ -1335,21 +1380,21 @@ typedef struct
    unsigned num_menu_tabs;
    unsigned active_menu_tab_index;
    unsigned last_active_menu_tab_index;
-   bool menu_navigation_wrapped;
+   materialui_nav_bar_action_tab_t back_tab;    /* unsigned alignment */
+   materialui_nav_bar_action_tab_t resume_tab;  /* unsigned alignment */
+   materialui_nav_bar_menu_tab_t menu_tabs[MUI_NAV_BAR_NUM_MENU_TABS_MAX]; /* unsigned alignment */
    enum materialui_nav_bar_location_type location;
-   materialui_nav_bar_action_tab_t back_tab;
-   materialui_nav_bar_action_tab_t resume_tab;
-   materialui_nav_bar_menu_tab_t menu_tabs[MUI_NAV_BAR_NUM_MENU_TABS_MAX];
+   bool menu_navigation_wrapped;
 } materialui_nav_bar_t;
 
 /* This structure holds all runtime parameters for
  * the scrollbar */
 typedef struct
 {
-   unsigned width;
-   unsigned height;
    int x;
    int y;
+   unsigned width;
+   unsigned height;
    bool active;
    bool dragged;
 } materialui_scrollbar_t;
@@ -1373,7 +1418,7 @@ enum materialui_entry_value_type
 typedef struct
 {
    font_data_t *font;
-   video_font_raster_block_t raster_block;
+   video_font_raster_block_t raster_block;   /* ptr alignment */
    unsigned glyph_width;
    int line_height;
    int line_ascender;
@@ -1388,10 +1433,10 @@ typedef struct
  * performance */
 typedef struct
 {
-   char battery_percent_str[MUI_BATTERY_PERCENT_MAX_LENGTH];
-   char timedate_str[MUI_TIMEDATE_MAX_LENGTH];
    int battery_percent_width;
    int timedate_width;
+   char battery_percent_str[MUI_BATTERY_PERCENT_MAX_LENGTH];
+   char timedate_str[MUI_TIMEDATE_MAX_LENGTH];
 } materialui_sys_bar_cache_t;
 
 /* This structure holds all runtime parameters
@@ -1402,15 +1447,15 @@ typedef struct
  * shown when using the 'desktop'-layout */
 typedef struct
 {
-   bool enabled;
-   bool cached;
    size_t last_selected;
+   unsigned height;
    float delay_timer;
    float alpha;
-   unsigned height;
    char str[MENU_SUBLABEL_MAX_LENGTH];
    char runtime_fallback_str[255];
    char last_played_fallback_str[255];
+   bool enabled;
+   bool cached;
 } materialui_status_bar_t;
 
 /* Defines common positions when referencing
@@ -1439,12 +1484,119 @@ typedef struct
  * playlists */
 typedef struct
 {
-   size_t size;
    materialui_playlist_icon_t *icons;
+   size_t size;
 } materialui_playlist_icons_t;
 
 typedef struct materialui_handle
 {
+   /* Pointer info */
+   menu_input_pointer_t pointer;                      /* int64_t alignment */
+   /* Use common tickers for all text
+    * > Simplifies configuration and
+    *   improves performance */
+   gfx_animation_ctx_ticker_t ticker;                 /* uint64_t alignment */
+   gfx_animation_ctx_ticker_smooth_t ticker_smooth;   /* uint64_t alignment */
+   /* Keeps track of the last time tabs were switched
+    * via a MENU_ACTION_LEFT/MENU_ACTION_RIGHT event */
+   retro_time_t last_tab_switch_time;  /* uint64_t alignment */
+
+   playlist_t *playlist;            /* ptr alignment */
+
+   /* Font data */
+   struct
+   {
+      materialui_font_data_t title; /* ptr alignment */
+      materialui_font_data_t list;  /* ptr alignment */
+      materialui_font_data_t hint;  /* ptr alignment */
+   } font_data;
+   /* Thumbnail helpers */
+   gfx_thumbnail_path_data_t *thumbnail_path_data;
+   struct
+   {
+      materialui_playlist_icons_t playlist;  /* ptr alignment */
+      uintptr_t bg;
+      uintptr_t list[MUI_TEXTURE_LAST];
+   } textures;
+
+   /* Status bar */
+   materialui_status_bar_t status_bar; /* size_t alignment */
+   size_t last_stack_size;
+   size_t first_onscreen_entry;
+   size_t last_onscreen_entry;
+   /* Used to track scroll animations */
+   size_t scroll_animation_selection;
+   size_t fullscreen_thumbnail_selection;
+   /* > When viewing 'desktop'-layout playlists,
+    *   need to cache the index of the last
+    *   selected entry so we can keep displaying
+    *   its thumbnails while waiting for next
+    *   to load after the selection has changed */
+   size_t desktop_thumbnail_last_selection;
+   unsigned last_width;
+   unsigned last_height;
+   unsigned sys_bar_height;
+   unsigned title_bar_height;
+   unsigned header_shadow_height;
+   unsigned selection_marker_shadow_height;
+   unsigned icon_size;
+   unsigned sys_bar_icon_size;
+   unsigned margin;
+   unsigned sys_bar_margin;
+   unsigned entry_divider_width;
+   unsigned sublabel_gap;
+   unsigned sublabel_padding;
+   /* Navigation bar parameters
+    * Note: layout width and height are convenience
+    * variables used when determining usable width/
+    * height for all other menu elements - e.g. when
+    * navigation bar is at the bottom of the screen
+    * nav_bar_screen_width is zero */
+   unsigned nav_bar_layout_width;
+   unsigned nav_bar_layout_height;
+
+   unsigned ticker_x_offset;
+   unsigned ticker_str_width;
+
+   /* Touch feedback animation parameters */
+   unsigned touch_feedback_selection;
+
+   unsigned thumbnail_width_max;
+   unsigned thumbnail_height_max;
+   materialui_landscape_optimization_t
+         landscape_optimization; /* unsigned alignment */
+   materialui_nav_bar_t nav_bar; /* unsigned alignment */
+   /* Colour theme parameters */
+   materialui_colors_t colors;   /* uint32_t alignment */
+
+   /* Scrollbar parameters */
+   materialui_scrollbar_t scrollbar;   /* int alignment */
+   int cursor_size;
+   /* Cached system bar data */
+   materialui_sys_bar_cache_t sys_bar_cache; /* int alignment */
+   float last_scale_factor;
+   float dip_base_unit_size;
+   /* Y position of the vertical scroll */
+   float scroll_y;
+   float content_height;
+   float pointer_start_scroll_y;
+   float transition_alpha;
+   float transition_x_offset;
+   float thumbnail_stream_delay;
+   float fullscreen_thumbnail_alpha;
+   float touch_feedback_alpha;
+   int16_t pointer_start_x;
+   int16_t pointer_start_y;
+
+   /* Colour theme parameters */
+   enum materialui_color_theme color_theme;
+
+   enum materialui_landscape_layout_optimization_type
+         last_landscape_layout_optimization;
+   enum materialui_list_view_type list_view_type;
+   char msgbox[1024];
+   char menu_title[255];
+   char fullscreen_thumbnail_label[255];
    bool is_portrait;
    bool need_compute;
    bool mouse_show;
@@ -1456,134 +1608,14 @@ typedef struct materialui_handle
    bool last_show_nav_bar;
    bool last_auto_rotate_nav_bar;
    bool menu_stack_flushed;
-
-   /* Keeps track of the last time tabs were switched
-    * via a MENU_ACTION_LEFT/MENU_ACTION_RIGHT event */
-   retro_time_t last_tab_switch_time;
-
-   enum materialui_landscape_layout_optimization_type
-         last_landscape_layout_optimization;
-   materialui_landscape_optimization_t
-         landscape_optimization;
-
-   playlist_t *playlist;
-
-   unsigned last_width;
-   unsigned last_height;
-   float last_scale_factor;
-   float dip_base_unit_size;
-
-   int cursor_size;
-
-   unsigned sys_bar_height;
-   unsigned title_bar_height;
-   unsigned header_shadow_height;
-   unsigned icon_size;
-   unsigned sys_bar_icon_size;
-   unsigned margin;
-   unsigned sys_bar_margin;
-   unsigned entry_divider_width;
-   unsigned sublabel_gap;
-   unsigned sublabel_padding;
-
-   /* Navigation bar parameters
-    * Note: layout width and height are convenience
-    * variables used when determining usable width/
-    * height for all other menu elements - e.g. when
-    * navigation bar is at the bottom of the screen
-    * nav_bar_screen_width is zero */
-   unsigned nav_bar_layout_width;
-   unsigned nav_bar_layout_height;
-   materialui_nav_bar_t nav_bar;
-
-   /* Scrollbar parameters */
-   materialui_scrollbar_t scrollbar;
-
-   size_t first_onscreen_entry;
-   size_t last_onscreen_entry;
-
-   /* Y position of the vertical scroll */
-   float scroll_y;
-   float content_height;
-
    /* Used to track scroll animations */
    bool scroll_animation_active;
-   size_t scroll_animation_selection;
-
-   char msgbox[1024];
-
-   char menu_title[255];
-
-   struct
-   {
-      uintptr_t bg;
-      uintptr_t list[MUI_TEXTURE_LAST];
-      materialui_playlist_icons_t playlist;
-   } textures;
-
-   /* Font data */
-   struct
-   {
-      materialui_font_data_t title;
-      materialui_font_data_t list;
-      materialui_font_data_t hint;
-   } font_data;
-
-   /* Pointer info */
-   menu_input_pointer_t pointer;
-   int16_t pointer_start_x;
-   int16_t pointer_start_y;
-   float pointer_start_scroll_y;
-
-   /* Colour theme parameters */
-   enum materialui_color_theme color_theme;
-   materialui_colors_t colors;
-
-   /* Cached system bar data */
-   materialui_sys_bar_cache_t sys_bar_cache;
-
-   /* Use common tickers for all text
-    * > Simplifies configuration and
-    *   improves performance */
    bool use_smooth_ticker;
-   gfx_animation_ctx_ticker_t ticker;
-   gfx_animation_ctx_ticker_smooth_t ticker_smooth;
-   unsigned ticker_x_offset;
-   unsigned ticker_str_width;
-
-   /* Touch feedback animation parameters */
-   unsigned touch_feedback_selection;
-   float touch_feedback_alpha;
    bool touch_feedback_update_selection;
-
-   /* Menu transition animation parameters */
-   float transition_alpha;
-   float transition_x_offset;
-   size_t last_stack_size;
-
-   /* Thumbnail helpers */
-   gfx_thumbnail_path_data_t *thumbnail_path_data;
-   float thumbnail_stream_delay;
-   unsigned thumbnail_width_max;
-   unsigned thumbnail_height_max;
    bool primary_thumbnail_available;
    bool secondary_thumbnail_enabled;
    bool show_fullscreen_thumbnails;
-   size_t fullscreen_thumbnail_selection;
-   float fullscreen_thumbnail_alpha;
-   char fullscreen_thumbnail_label[255];
-   /* > When viewing 'desktop'-layout playlists,
-    *   need to cache the index of the last
-    *   selected entry so we can keep displaying
-    *   its thumbnails while waiting for next
-    *   to load after the selection has changed */
-   size_t desktop_thumbnail_last_selection;
-
-   /* Status bar */
-   materialui_status_bar_t status_bar;
-
-   enum materialui_list_view_type list_view_type;
-
+   bool show_selection_marker_shadow;
 } materialui_handle_t;
 
 static void hex32_to_rgba_normalized(uint32_t hex, float* rgba, float alpha)
@@ -1742,6 +1774,12 @@ static void materialui_prepare_colors(
             current_theme->status_bar_shadow,
             mui->colors.status_bar_shadow, 0.0f);
    hex32_to_rgba_normalized(
+            current_theme->selection_marker_shadow,
+            mui->colors.selection_marker_shadow_top, 0.0f);
+   hex32_to_rgba_normalized(
+            current_theme->selection_marker_shadow,
+            mui->colors.selection_marker_shadow_bottom, 0.0f);
+   hex32_to_rgba_normalized(
             current_theme->scrollbar,
             mui->colors.scrollbar, 1.0f);
    hex32_to_rgba_normalized(
@@ -1774,6 +1812,11 @@ static void materialui_prepare_colors(
    mui->colors.status_bar_shadow[11]             = current_theme->status_bar_shadow_opacity;
    mui->colors.status_bar_shadow[15]             = current_theme->status_bar_shadow_opacity;
    mui->colors.status_bar_shadow_opacity         = current_theme->status_bar_shadow_opacity;
+   mui->colors.selection_marker_shadow_top[11]   = current_theme->selection_marker_shadow_opacity;
+   mui->colors.selection_marker_shadow_top[15]   = current_theme->selection_marker_shadow_opacity;
+   mui->colors.selection_marker_shadow_bottom[3] = current_theme->selection_marker_shadow_opacity;
+   mui->colors.selection_marker_shadow_bottom[7] = current_theme->selection_marker_shadow_opacity;
+   mui->colors.selection_marker_shadow_opacity   = current_theme->selection_marker_shadow_opacity;
 }
 
 static const char *materialui_texture_path(unsigned id)
@@ -2251,7 +2294,7 @@ static void materialui_draw_icon(
    draw.matrix_data     = &mymat;
    draw.texture         = texture;
    draw.prim_type       = GFX_DISPLAY_PRIM_TRIANGLESTRIP;
-   draw.pipeline.id     = 0;
+   draw.pipeline_id     = 0;
 
    gfx_display_draw(&draw, userdata,
          video_width, video_height);
@@ -4904,9 +4947,9 @@ static void materialui_render_background(materialui_handle_t *mui,
    draw.vertex                = NULL;
    draw.tex_coord             = NULL;
    draw.vertex_count          = 4;
-   draw.pipeline.id           = 0;
-   draw.pipeline.active       = false;
-   draw.pipeline.backend_data = NULL;
+   draw.pipeline_id           = 0;
+   draw.pipeline_active       = false;
+   draw.backend_data          = NULL;
    draw.color                 = draw_color;
 
    if (mui->textures.bg && !libretro_running)
@@ -4992,7 +5035,8 @@ static void materialui_render_selection_highlight(
       materialui_handle_t *mui, void *userdata,
       unsigned video_width, unsigned video_height,
       unsigned header_height, int x_offset,
-      size_t selection, float *color)
+      size_t selection, float *highlight_color,
+      float *shadow_top_colour, float *shadow_bottom_colour)
 {
    /* Only draw highlight if selection is onscreen */
    if (materialui_entry_onscreen(mui, selection))
@@ -5034,7 +5078,36 @@ static void materialui_render_selection_highlight(
             (unsigned)highlight_height,
             video_width,
             video_height,
-            color);
+            highlight_color);
+
+      /* Draw shadow, if required */
+      if (mui->show_selection_marker_shadow)
+      {
+         gfx_display_draw_quad(
+               userdata,
+               video_width,
+               video_height,
+               highlight_x,
+               highlight_y,
+               (unsigned)highlight_width,
+               mui->selection_marker_shadow_height,
+               video_width,
+               video_height,
+               shadow_top_colour);
+
+         gfx_display_draw_quad(
+               userdata,
+               video_width,
+               video_height,
+               highlight_x,
+               highlight_y + highlight_height -
+                     (int)mui->selection_marker_shadow_height,
+               (unsigned)highlight_width,
+               mui->selection_marker_shadow_height,
+               video_width,
+               video_height,
+               shadow_bottom_colour);
+      }
    }
 }
 
@@ -5095,17 +5168,40 @@ static void materialui_render_entry_touch_feedback(
    if (mui->touch_feedback_alpha > 0.0f)
    {
       float higlight_color[16];
+      float shadow_top_color[16];
+      float shadow_bottom_color[16];
 
       /* Set highlight colour */
-      memcpy(higlight_color, mui->colors.list_highlighted_background, sizeof(higlight_color));
-      gfx_display_set_alpha(higlight_color, mui->transition_alpha * mui->touch_feedback_alpha);
+      memcpy(higlight_color, mui->colors.list_highlighted_background,
+            sizeof(higlight_color));
+      gfx_display_set_alpha(higlight_color,
+            mui->transition_alpha * mui->touch_feedback_alpha);
+
+      /* Set shadow colour (if required) */
+      if (mui->show_selection_marker_shadow)
+      {
+         float selection_marker_shadow_alpha =
+               mui->colors.selection_marker_shadow_opacity *
+                     mui->transition_alpha * mui->touch_feedback_alpha;
+
+         memcpy(shadow_top_color, mui->colors.selection_marker_shadow_top,
+               sizeof(shadow_top_color));
+         shadow_top_color[11]   = selection_marker_shadow_alpha;
+         shadow_top_color[15]   = selection_marker_shadow_alpha;
+
+         memcpy(shadow_bottom_color, mui->colors.selection_marker_shadow_bottom,
+               sizeof(shadow_bottom_color));
+         shadow_bottom_color[3] = selection_marker_shadow_alpha;
+         shadow_bottom_color[7] = selection_marker_shadow_alpha;
+      }
 
       /* Draw highlight */
       materialui_render_selection_highlight(
             mui, userdata, video_width, video_height,
             header_height, x_offset,
             mui->touch_feedback_selection,
-            higlight_color);
+            higlight_color,
+            shadow_top_color, shadow_bottom_color);
    }
 }
 
@@ -5124,7 +5220,7 @@ static void materialui_render_header(
    int sys_bar_text_y                    = (int)(((float)mui->sys_bar_height / 2.0f) + (float)mui->font_data.hint.line_centre_offset);
    int title_x                           = 0;
    bool show_back_icon                   = menu_entries_ctl(MENU_ENTRIES_CTL_SHOW_BACK, NULL);
-   bool show_search_icon                 = mui->is_playlist || mui->is_file_list;
+   bool show_search_icon                 = mui->is_playlist || mui->is_file_list || mui->is_core_updater_list;
    bool show_switch_view_icon            = mui->is_playlist && mui->primary_thumbnail_available;
    bool use_landscape_layout             = !mui->is_portrait &&
          (mui->last_landscape_layout_optimization != MATERIALUI_LANDSCAPE_LAYOUT_OPTIMIZATION_DISABLED);
@@ -6280,6 +6376,20 @@ static void materialui_colors_set_transition_alpha(materialui_handle_t *mui)
          mui->colors.status_bar_shadow[11] = status_bar_shadow_alpha;
          mui->colors.status_bar_shadow[15] = status_bar_shadow_alpha;
       }
+
+      /* Selection marker shadow only fades if
+       * it is enabled (i.e. content running +
+       * semi-transparent background) */
+      if (mui->show_selection_marker_shadow)
+      {
+         float selection_marker_shadow_alpha =
+               mui->colors.selection_marker_shadow_opacity * alpha;
+
+         mui->colors.selection_marker_shadow_top[11]   = selection_marker_shadow_alpha;
+         mui->colors.selection_marker_shadow_top[15]   = selection_marker_shadow_alpha;
+         mui->colors.selection_marker_shadow_bottom[3] = selection_marker_shadow_alpha;
+         mui->colors.selection_marker_shadow_bottom[7] = selection_marker_shadow_alpha;
+      }
    }
 }
 
@@ -6332,6 +6442,20 @@ static void materialui_colors_reset_transition_alpha(materialui_handle_t *mui)
 
          mui->colors.status_bar_shadow[11] = status_bar_shadow_alpha;
          mui->colors.status_bar_shadow[15] = status_bar_shadow_alpha;
+      }
+
+      /* Selection marker shadow only fades if
+       * it is enabled (i.e. content running +
+       * semi-transparent background) */
+      if (mui->show_selection_marker_shadow)
+      {
+         float selection_marker_shadow_alpha =
+               mui->colors.selection_marker_shadow_opacity;
+
+         mui->colors.selection_marker_shadow_top[11]   = selection_marker_shadow_alpha;
+         mui->colors.selection_marker_shadow_top[15]   = selection_marker_shadow_alpha;
+         mui->colors.selection_marker_shadow_bottom[3] = selection_marker_shadow_alpha;
+         mui->colors.selection_marker_shadow_bottom[7] = selection_marker_shadow_alpha;
       }
    }
 }
@@ -6423,6 +6547,13 @@ static void materialui_frame(void *data, video_frame_info_t *video_info)
       mui->ticker.type_enum        = menu_ticker_type;
    }
 
+   /* Determine whether a selection marker 'shadow'
+    * should be drawn
+    * > Improves selection marker visibility when
+    *   running with a transparent background */
+   mui->show_selection_marker_shadow = libretro_running &&
+         (menu_framebuffer_opacity < 1.0f);
+
    /* Handle any transparency adjustments required
     * by menu transition animations */
    materialui_colors_set_transition_alpha(mui);
@@ -6444,16 +6575,18 @@ static void materialui_frame(void *data, video_frame_info_t *video_info)
          video_width, video_height,
          header_height, list_x_offset);
 
-   /* Draw 'highlighted entry' selection box */
-   materialui_render_selection_highlight(
-         mui, userdata, video_width, video_height,
-         header_height, list_x_offset, selection,
-         mui->colors.list_highlighted_background);
-
    /* Draw 'short press' touch feedback highlight */
    materialui_render_entry_touch_feedback(
          mui, userdata, video_width, video_height,
          header_height, list_x_offset, selection);
+
+   /* Draw 'highlighted entry' selection box */
+   materialui_render_selection_highlight(
+         mui, userdata, video_width, video_height,
+         header_height, list_x_offset, selection,
+         mui->colors.list_highlighted_background,
+         mui->colors.selection_marker_shadow_top,
+         mui->colors.selection_marker_shadow_bottom);
 
    /* Draw menu list
     * > Must update scrollbar draw position before
@@ -7193,6 +7326,7 @@ static void materialui_layout(materialui_handle_t *mui, bool video_is_threaded)
    hint_font_size            = mui->dip_base_unit_size / 11;
 
    mui->header_shadow_height = mui->dip_base_unit_size / 36;
+   mui->selection_marker_shadow_height = mui->dip_base_unit_size / 30;
 
    mui->margin               = mui->dip_base_unit_size / 9;
    mui->icon_size            = mui->dip_base_unit_size / 3;
@@ -9197,9 +9331,9 @@ static int materialui_pointer_up(void *userdata,
             /* Tap/press header: Menu back/cancel, or search/switch view */
             else if (y < header_height)
             {
-               /* If this is a playlist or file list, enable
-                * search functionality */
-               if (mui->is_playlist || mui->is_file_list)
+               /* If this is a playlist, file list or core
+                * updater list, enable search functionality */
+               if (mui->is_playlist || mui->is_file_list || mui->is_core_updater_list)
                {
                   bool switch_view_enabled  =
                         mui->is_playlist && mui->primary_thumbnail_available;

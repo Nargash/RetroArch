@@ -92,20 +92,8 @@ enum vulkan_wsi_type
 
 typedef struct vulkan_context
 {
-   bool invalid_swapchain;
-   /* Used by screenshot to get blits with correct colorspace. */
-   bool swapchain_is_srgb;
-   bool swap_interval_emulation_lock;
-   bool has_acquired_swapchain;
-
-   unsigned swapchain_width;
-   unsigned swapchain_height;
-   unsigned swap_interval;
-
-   uint32_t graphics_queue_index;
-   uint32_t num_swapchain_images;
-   uint32_t current_swapchain_index;
-   uint32_t current_frame_index;
+   slock_t *queue_lock;
+   retro_vulkan_destroy_device_t destroy_device;   /* ptr alignment */
 
    VkInstance instance;
    VkPhysicalDevice gpu;
@@ -117,41 +105,64 @@ typedef struct vulkan_context
 
    VkImage swapchain_images[VULKAN_MAX_SWAPCHAIN_IMAGES];
    VkFence swapchain_fences[VULKAN_MAX_SWAPCHAIN_IMAGES];
-   bool swapchain_fences_signalled[VULKAN_MAX_SWAPCHAIN_IMAGES];
-   VkSemaphore swapchain_semaphores[VULKAN_MAX_SWAPCHAIN_IMAGES];
    VkFormat swapchain_format;
 
+   VkSemaphore swapchain_semaphores[VULKAN_MAX_SWAPCHAIN_IMAGES];
    VkSemaphore swapchain_acquire_semaphore;
-   unsigned num_recycled_acquire_semaphores;
    VkSemaphore swapchain_recycled_semaphores[VULKAN_MAX_SWAPCHAIN_IMAGES];
    VkSemaphore swapchain_wait_semaphores[VULKAN_MAX_SWAPCHAIN_IMAGES];
-
-   slock_t *queue_lock;
-   retro_vulkan_destroy_device_t destroy_device;
 
 #ifdef VULKAN_DEBUG
    VkDebugReportCallbackEXT debug_callback;
 #endif
+   uint32_t graphics_queue_index;
+   uint32_t num_swapchain_images;
+   uint32_t current_swapchain_index;
+   uint32_t current_frame_index;
+
+   unsigned swapchain_width;
+   unsigned swapchain_height;
+   unsigned swap_interval;
+   unsigned num_recycled_acquire_semaphores;
+
+   bool swapchain_fences_signalled[VULKAN_MAX_SWAPCHAIN_IMAGES];
+   bool invalid_swapchain;
+   /* Used by screenshot to get blits with correct colorspace. */
+   bool swapchain_is_srgb;
+   bool swap_interval_emulation_lock;
+   bool has_acquired_swapchain;
 } vulkan_context_t;
 
 struct vulkan_emulated_mailbox
 {
    sthread_t *thread;
-   VkDevice device;
-   VkSwapchainKHR swapchain;
    slock_t *lock;
    scond_t *cond;
+   VkDevice device;              /* ptr alignment */
+   VkSwapchainKHR swapchain;     /* ptr alignment */
 
    unsigned index;
+   VkResult result;              /* enum alignment */
    bool acquired;
    bool request_acquire;
    bool dead;
    bool has_pending_request;
-   VkResult result;
 };
 
 typedef struct gfx_ctx_vulkan_data
 {
+   struct string_list *gpu_list;
+
+   vulkan_context_t context;
+   VkSurfaceKHR vk_surface;      /* ptr alignment */
+   VkSwapchainKHR swapchain;     /* ptr alignment */
+
+   struct vulkan_emulated_mailbox mailbox;
+
+   /* Used to check if we need to use mailbox emulation or not.
+    * Only relevant on Windows for now. */
+   bool fullscreen;
+
    bool need_new_swapchain;
    bool created_new_swapchain;
    bool emulate_mailbox;
@@ -160,16 +171,6 @@ typedef struct gfx_ctx_vulkan_data
     * semaphores instead of fences for vkAcquireNextImageKHR.
     * Helps workaround certain performance issues on some drivers. */
    bool use_wsi_semaphore;
-   vulkan_context_t context;
-   VkSurfaceKHR vk_surface;
-   VkSwapchainKHR swapchain;
-
-   struct vulkan_emulated_mailbox mailbox;
-   /* Used to check if we need to use mailbox emulation or not.
-    * Only relevant on Windows for now. */
-   bool fullscreen;
-
-   struct string_list *gpu_list;
 } gfx_ctx_vulkan_data_t;
 
 struct vulkan_display_surface_info
@@ -188,71 +189,69 @@ struct vk_vertex
 {
    float x, y;
    float tex_x, tex_y;
-   struct vk_color color;
+   struct vk_color color;        /* float alignment */
 };
 
 struct vk_image
 {
-   VkImage image;
-   VkImageView view;
-   VkFramebuffer framebuffer;
+   VkImage image;                /* ptr alignment */
+   VkImageView view;             /* ptr alignment */
+   VkFramebuffer framebuffer;    /* ptr alignment */
 };
 
 struct vk_texture
 {
+   VkDeviceSize memory_size;     /* uint64_t alignment */
+
+   void *mapped;
+   VkImage image;                /* ptr alignment */
+   VkImageView view;             /* ptr alignment */
+   VkBuffer buffer;              /* ptr alignment */
+   VkDeviceMemory memory;        /* ptr alignment */
+
+   size_t offset;
+   size_t stride;
+   size_t size;
+   uint32_t memory_type;
+   unsigned width, height;
+
+   VkImageLayout layout;         /* enum alignment */
+   VkFormat format;              /* enum alignment */
    enum vk_texture_type type;
    bool default_smooth;
    bool need_manual_cache_management;
    bool mipmap;
-   uint32_t memory_type;
-   unsigned width, height;
-   size_t offset;
-   size_t stride;
-   size_t size;
-
-   void *mapped;
-
-   VkImage image;
-   VkImageView view;
-   VkDeviceMemory memory;
-   VkBuffer buffer;
-
-   VkFormat format;
-
-   VkDeviceSize memory_size;
-
-   VkImageLayout layout;
 };
 
 struct vk_buffer
 {
-   VkBuffer buffer;
-   VkDeviceMemory memory;
-   VkDeviceSize size;
+   VkDeviceSize size;      /* uint64_t alignment */
    void *mapped;
+   VkBuffer buffer;        /* ptr alignment */
+   VkDeviceMemory memory;  /* ptr alignment */
 };
 
 struct vk_buffer_node
 {
-   struct vk_buffer buffer;
+   struct vk_buffer buffer;      /* uint64_t alignment */
    struct vk_buffer_node *next;
 };
 
 struct vk_buffer_chain
 {
-   VkDeviceSize block_size;
-   VkDeviceSize alignment;
-   VkDeviceSize offset;
-   VkBufferUsageFlags usage;
+   VkDeviceSize block_size; /* uint64_t alignment */
+   VkDeviceSize alignment;  /* uint64_t alignment */
+   VkDeviceSize offset;     /* uint64_t alignment */
    struct vk_buffer_node *head;
    struct vk_buffer_node *current;
+   VkBufferUsageFlags usage; /* uint32_t alignment */
 };
 
 struct vk_buffer_range
 {
+   VkDeviceSize offset; /* uint64_t alignment */
    uint8_t *data;
-   VkBuffer buffer;
-   VkDeviceSize offset;
+   VkBuffer buffer;     /* ptr alignment */
 };
 
 struct vk_buffer_chain vulkan_buffer_chain_init(
@@ -270,19 +269,18 @@ void vulkan_buffer_chain_free(
 
 struct vk_descriptor_pool
 {
-   VkDescriptorPool pool;
-   VkDescriptorSet sets[VULKAN_DESCRIPTOR_MANAGER_BLOCK_SETS];
    struct vk_descriptor_pool *next;
+   VkDescriptorPool pool; /* ptr alignment */
+   VkDescriptorSet sets[VULKAN_DESCRIPTOR_MANAGER_BLOCK_SETS]; /* ptr alignment */
 };
 
 struct vk_descriptor_manager
 {
    struct vk_descriptor_pool *head;
    struct vk_descriptor_pool *current;
+   VkDescriptorSetLayout set_layout; /* ptr alignment */
+   VkDescriptorPoolSize sizes[VULKAN_MAX_DESCRIPTOR_POOL_SIZES]; /* uint32_t alignment */
    unsigned count;
-
-   VkDescriptorPoolSize sizes[VULKAN_MAX_DESCRIPTOR_POOL_SIZES];
-   VkDescriptorSetLayout set_layout;
    unsigned num_sizes;
 };
 
@@ -294,37 +292,38 @@ struct vk_per_frame
    struct vk_buffer_chain ubo;
    struct vk_descriptor_manager descriptor_manager;
 
-   VkCommandPool cmd_pool;
-   VkCommandBuffer cmd;
+   VkCommandPool cmd_pool; /* ptr alignment */
+   VkCommandBuffer cmd;    /* ptr alignment */
 };
 
 struct vk_draw_quad
 {
-   VkPipeline pipeline;
    struct vk_texture *texture;
-   VkSampler sampler;
    const math_matrix_4x4 *mvp;
-   struct vk_color color;
+   VkPipeline pipeline;          /* ptr alignment */
+   VkSampler sampler;            /* ptr alignment */
+   struct vk_color color;        /* float alignment */
 };
 
 struct vk_draw_triangles
 {
-   unsigned vertices;
-   size_t uniform_size;
    const void *uniform;
    const struct vk_buffer_range *vbo;
    struct vk_texture *texture;
-   VkPipeline pipeline;
-   VkSampler sampler;
+   VkPipeline pipeline;          /* ptr alignment */
+   VkSampler sampler;            /* ptr alignment */
+   size_t uniform_size;
+   unsigned vertices;
 };
 
 typedef struct vk
 {
-   bool vsync;
-   bool keep_aspect;
-   bool fullscreen;
-   bool quitting;
-   bool should_resize;
+   void *filter_chain;
+   vulkan_context_t *context;
+   void *ctx_data;
+   const gfx_ctx_driver_t *ctx_driver;
+   struct vk_per_frame *chain;
+   struct vk_image *backbuffer;
 
    unsigned video_width;
    unsigned video_height;
@@ -335,18 +334,13 @@ typedef struct vk
    unsigned num_swapchain_images;
    unsigned last_valid_index;
 
-   vulkan_context_t *context;
    video_info_t video;
-   void *ctx_data;
-   const gfx_ctx_driver_t *ctx_driver;
 
    VkFormat tex_fmt;
-   math_matrix_4x4 mvp, mvp_no_rot;
+   math_matrix_4x4 mvp, mvp_no_rot; /* float alignment */
    VkViewport vk_vp;
    VkRenderPass render_pass;
    struct video_viewport vp;
-   struct vk_per_frame *chain;
-   struct vk_image *backbuffer;
    struct vk_per_frame swapchain[VULKAN_MAX_SWAPCHAIN_IMAGES];
    struct vk_image backbuffers[VULKAN_MAX_SWAPCHAIN_IMAGES];
    struct vk_texture default_texture;
@@ -358,20 +352,20 @@ typedef struct vk
 
    struct
    {
-      bool pending;
-      bool streamed;
       struct scaler_ctx scaler_bgr;
       struct scaler_ctx scaler_rgb;
       struct vk_texture staging[VULKAN_MAX_SWAPCHAIN_IMAGES];
+      bool pending;
+      bool streamed;
    } readback;
 
    struct
    {
-      bool enable;
-      bool full_screen;
-      unsigned count;
       struct vk_texture *images;
       struct vk_vertex *vertex;
+      unsigned count;
+      bool enable;
+      bool full_screen;
    } overlay;
 
    struct
@@ -385,20 +379,20 @@ typedef struct vk
 
    struct
    {
-      bool blend;
       VkPipeline pipelines[7 * 2];
       struct vk_texture blank_texture;
+      bool blend;
    } display;
 
    struct
    {
-      bool enable;
-      bool full_screen;
-      unsigned last_index;
-      float alpha;
       struct vk_texture textures[VULKAN_MAX_SWAPCHAIN_IMAGES];
       struct vk_texture textures_optimal[VULKAN_MAX_SWAPCHAIN_IMAGES];
+      unsigned last_index;
+      float alpha;
       bool dirty[VULKAN_MAX_SWAPCHAIN_IMAGES];
+      bool enable;
+      bool full_screen;
    } menu;
 
    struct
@@ -411,8 +405,13 @@ typedef struct vk
 
    struct
    {
-      bool enable;
-      bool valid_semaphore;
+      const struct retro_vulkan_image *image;
+      VkPipelineStageFlags *wait_dst_stages;
+      VkCommandBuffer *cmd;
+      VkSemaphore *semaphores;
+      VkSemaphore signal_semaphore; /* ptr alignment */
+
+      struct retro_hw_render_interface_vulkan iface;
 
       unsigned capacity_cmd;
       unsigned last_width;
@@ -421,26 +420,27 @@ typedef struct vk
       uint32_t num_cmd;
       uint32_t src_queue_family;
 
-      struct retro_hw_render_interface_vulkan iface;
-      const struct retro_vulkan_image *image;
-      VkSemaphore *semaphores;
-      VkSemaphore signal_semaphore;
-      VkPipelineStageFlags *wait_dst_stages;
-      VkCommandBuffer *cmd;
+      bool enable;
+      bool valid_semaphore;
    } hw;
 
    struct
    {
       uint64_t dirty;
-      VkRect2D scissor;
-      bool use_scissor;
-      VkPipeline pipeline;
-      VkImageView view;
-      VkSampler sampler;
+      VkPipeline pipeline; /* ptr alignment */
+      VkImageView view;    /* ptr alignment */
+      VkSampler sampler;   /* ptr alignment */
       math_matrix_4x4 mvp;
+      VkRect2D scissor;    /* int32_t alignment */
+      bool use_scissor;
    } tracker;
 
-   void *filter_chain;
+   bool vsync;
+   bool keep_aspect;
+   bool fullscreen;
+   bool quitting;
+   bool should_resize;
+
 } vk_t;
 
 #define VK_BUFFER_CHAIN_DISCARD(chain) \
@@ -586,24 +586,58 @@ static INLINE void vulkan_write_quad_vbo(struct vk_vertex *pv,
       float tex_x, float tex_y, float tex_width, float tex_height,
       const struct vk_color *color)
 {
-   unsigned i;
-   static const float strip[2 * 6] = {
-      0.0f, 0.0f,
-      0.0f, 1.0f,
-      1.0f, 0.0f,
-      1.0f, 1.0f,
-      1.0f, 0.0f,
-      0.0f, 1.0f,
-   };
-
-   for (i = 0; i < 6; i++)
-   {
-      pv[i].x     = x + strip[2 * i + 0] * width;
-      pv[i].y     = y + strip[2 * i + 1] * height;
-      pv[i].tex_x = tex_x + strip[2 * i + 0] * tex_width;
-      pv[i].tex_y = tex_y + strip[2 * i + 1] * tex_height;
-      pv[i].color = *color;
-   }
+   float r        = color->r;
+   float g        = color->g;
+   float b        = color->b;
+   float a        = color->a;
+   pv[0].x        = x     + 0.0f * width;
+   pv[0].y        = y     + 0.0f * height;
+   pv[0].tex_x    = tex_x + 0.0f * tex_width;
+   pv[0].tex_y    = tex_y + 0.0f * tex_height;
+   pv[0].color.r  = r;
+   pv[0].color.g  = g;
+   pv[0].color.b  = b;
+   pv[0].color.a  = a;
+   pv[1].x        = x     + 0.0f * width;
+   pv[1].y        = y     + 1.0f * height;
+   pv[1].tex_x    = tex_x + 0.0f * tex_width;
+   pv[1].tex_y    = tex_y + 1.0f * tex_height;
+   pv[1].color.r  = r;
+   pv[1].color.g  = g;
+   pv[1].color.b  = b;
+   pv[1].color.a  = a;
+   pv[2].x        = x     + 1.0f * width;
+   pv[2].y        = y     + 0.0f * height;
+   pv[2].tex_x    = tex_x + 1.0f * tex_width;
+   pv[2].tex_y    = tex_y + 0.0f * tex_height;
+   pv[2].color.r  = r;
+   pv[2].color.g  = g;
+   pv[2].color.b  = b;
+   pv[2].color.a  = a;
+   pv[3].x        = x     + 1.0f * width;
+   pv[3].y        = y     + 1.0f * height;
+   pv[3].tex_x    = tex_x + 1.0f * tex_width;
+   pv[3].tex_y    = tex_y + 1.0f * tex_height;
+   pv[3].color.r  = r;
+   pv[3].color.g  = g;
+   pv[3].color.b  = b;
+   pv[3].color.a  = a;
+   pv[4].x        = x     + 1.0f * width;
+   pv[4].y        = y     + 0.0f * height;
+   pv[4].tex_x    = tex_x + 1.0f * tex_width;
+   pv[4].tex_y    = tex_y + 0.0f * tex_height;
+   pv[4].color.r  = r;
+   pv[4].color.g  = g;
+   pv[4].color.b  = b;
+   pv[4].color.a  = a;
+   pv[5].x        = x     + 0.0f * width;
+   pv[5].y        = y     + 1.0f * height;
+   pv[5].tex_x    = tex_x + 0.0f * tex_width;
+   pv[5].tex_y    = tex_y + 1.0f * tex_height;
+   pv[5].color.r  = r;
+   pv[5].color.g  = g;
+   pv[5].color.b  = b;
+   pv[5].color.a  = a;
 }
 
 struct vk_buffer vulkan_create_buffer(

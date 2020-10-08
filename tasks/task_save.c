@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 
 #ifdef _WIN32
 #include <direct.h>
@@ -29,6 +30,7 @@
 #include <compat/strl.h>
 #include <retro_assert.h>
 #include <lists/string_list.h>
+#include <lists/dir_list.h>
 #include <streams/interface_stream.h>
 #include <streams/file_stream.h>
 #include <streams/rzip_stream.h>
@@ -128,6 +130,13 @@ struct autosave
    unsigned interval;
    volatile bool quit;
    bool compress_files;
+   unsigned short max_backups;
+   unsigned short target_backup_interval;
+   unsigned short autosave_counter;
+   unsigned short backup_counter;
+   char filename_base[PATH_MAX_LENGTH];
+   char *backup_dir;
+   struct string_list *backup_list;
 };
 #endif
 
@@ -153,6 +162,39 @@ static struct string_list *task_save_files = NULL;
 
 #ifdef HAVE_THREADS
 /**
+ * autosave_save:
+ * @path            : path to autosave file
+ * @compress_files  : if true, use compression
+ * @buffer          : pointer to buffer
+ * @bufsize         : size of @data buffer
+ *
+ * Write file in buffer to disk
+ *
+ * Returns: true on success, otherwise false
+ **/
+static bool autosave_save(const char *path, bool compress_files, const void *buffer, uint64_t bufsize)
+{
+      intfstream_t *file = NULL;
+         /* Should probably deal with this more elegantly. */
+         if (compress_files)
+            file = intfstream_open_rzip_file(path,
+                  RETRO_VFS_FILE_ACCESS_WRITE);
+         else
+            file = intfstream_open_file(path,
+                  RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+
+         if (file)
+         {
+            intfstream_write(file, buffer, bufsize);
+            intfstream_flush(file);
+            intfstream_close(file);
+            free(file);
+            return true;
+         }
+         else
+            return false;
+}
+/**
  * autosave_thread:
  * @data            : pointer to autosave object
  *
@@ -175,22 +217,54 @@ static void autosave_thread(void *data)
 
       if (differ)
       {
-         intfstream_t *file = NULL;
-
-         /* Should probably deal with this more elegantly. */
+/*          intfstream_t *file = NULL;
+         
          if (save->compress_files)
             file = intfstream_open_rzip_file(save->path,
                   RETRO_VFS_FILE_ACCESS_WRITE);
          else
             file = intfstream_open_file(save->path,
-                  RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+                  RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE); */
 
-         if (file)
+         if (autosave_save(save->path, save->compress_files, save->buffer, save->bufsize))
          {
-            intfstream_write(file, save->buffer, save->bufsize);
+/*             intfstream_write(file, save->buffer, save->bufsize);
             intfstream_flush(file);
             intfstream_close(file);
-            free(file);
+            free(file); */
+
+             /* Set up filename for backup */
+            if (save->max_backups>0)
+            {
+               if (save->autosave_counter == 0 || save->autosave_counter == save->target_backup_interval)
+               {
+                     char *backup_filename;
+                     backup_filename = strdup(save->backup_dir);
+                     fill_str_dated_filename(backup_filename, save->filename_base,
+                        FILE_PATH_CORE_BACKUP_EXTENSION, sizeof(backup_filename));
+
+                     if (save->backup_counter < save->backup_list->size)
+                     {
+                        if (path_is_valid(save->backup_list->elems[save->backup_counter].data))
+                           filestream_delete(save->backup_list->elems[save->backup_counter].data);
+                     }
+                     else
+                     {
+                        union string_list_elem_attr attr;
+                        attr.i = 0;
+                        string_list_append(save->backup_list, backup_filename, attr);
+                     }
+                     
+                     autosave_save(backup_filename, save->compress_files, save->buffer, save->bufsize);
+                     save->autosave_counter = 0;
+                     save->backup_counter++;
+               }
+               
+               if (save->backup_counter == save->max_backups)
+                  save->backup_counter = 0;
+            }
+            
+            save->autosave_counter++;
          }
       }
 
@@ -217,6 +291,8 @@ static void autosave_thread(void *data)
  * @data            : pointer to buffer
  * @size            : size of @data buffer
  * @interval        : interval at which saves should be performed.
+ * @compress        : use compression for auto-saved files
+ * @backup_saves    : periodically copy the auto-saved file
  *
  * Create and initialize autosave object.
  *
@@ -225,7 +301,8 @@ static void autosave_thread(void *data)
  **/
 static autosave_t *autosave_new(const char *path,
       const void *data, size_t size,
-      unsigned interval, bool compress)
+      unsigned interval, bool compress,
+      bool backup_saves)
 {
    void       *buf               = NULL;
    autosave_t *handle            = (autosave_t*)malloc(sizeof(*handle));
@@ -238,6 +315,10 @@ static autosave_t *autosave_new(const char *path,
    handle->compress_files        = compress;
    handle->retro_buffer          = data;
    handle->path                  = path;
+   handle->max_backups           = 10;
+   handle->autosave_counter      = 0;
+   handle->backup_counter        = 0;
+   handle->target_backup_interval = 0;
 
    buf                           = malloc(size);
 
@@ -255,6 +336,53 @@ static autosave_t *autosave_new(const char *path,
    handle->cond_lock             = slock_new();
    handle->cond                  = scond_new();
    handle->thread                = sthread_create(autosave_thread, handle);
+   
+   char  *backup_dir;
+   backup_dir = strdup(path);
+   if (backup_saves)
+   {
+      /* Create directory, if required */
+      path_remove_extension(backup_dir);
+      if (!path_is_directory(backup_dir))
+      {
+         if (!path_mkdir(backup_dir))
+         {
+            RARCH_ERR("[Save backup] Failed to create backup directory: %s.\n", backup_dir);
+            backup_saves= false;
+            handle->max_backups=0;  /* This will turn off auto-backup in the autosave thread */
+         }
+      }
+   }
+   if (backup_saves)
+   {
+      handle->backup_dir =strdup(backup_dir);
+      fill_pathname_parent_dir_name(handle->filename_base,
+            backup_dir, sizeof(handle->filename_base));
+      
+      /* Get backup file list */
+      struct string_list *backup_list      = NULL;
+      backup_list = dir_list_new(
+            backup_dir,
+            FILE_PATH_CORE_BACKUP_EXTENSION, /* TODO: want a new extension? */
+            false, /* include_dirs */
+            false, /* include_hidden */
+            true, /* include_compressed */
+            false  /* recursive */
+      );
+         /* Sanity check */
+      if (!backup_list || backup_list->size < 1)
+      {
+         backup_saves= false;
+         handle->max_backups=0;  /* This will turn off auto-backup in the autosave thread */
+         string_list_free(backup_list);
+      }
+      else
+      {
+         dir_list_sort(backup_list, true);   /* Sorted by timestamp since we assume all backup files in this dir have timestamps in their names */
+         handle->backup_list = backup_list;
+      }
+      
+   }
 
    return handle;
 }
@@ -277,6 +405,8 @@ static void autosave_free(autosave_t *handle)
    slock_free(handle->cond_lock);
    scond_free(handle->cond);
 
+   string_list_free(handle->backup_list);
+
    if (handle->buffer)
       free(handle->buffer);
    handle->buffer = NULL;
@@ -288,6 +418,8 @@ bool autosave_init(void)
    autosave_t **list          = NULL;
    settings_t *settings       = config_get_ptr();
    unsigned autosave_interval = settings->uints.autosave_interval;
+   unsigned target_backup_interval = 300; /* TODO: Make settings config option for this */
+   bool backup_saves          = true;  /* TODO: Make settings config option for this */
 #if defined(HAVE_ZLIB)
    bool compress_files        = settings->bools.save_file_compression;
 #else
@@ -325,13 +457,20 @@ bool autosave_init(void)
             mem_info.data,
             mem_info.size,
             autosave_interval,
-            compress_files);
+            compress_files,
+            backup_saves);
 
       if (!auto_st)
       {
          RARCH_WARN("%s\n", msg_hash_to_str(MSG_AUTOSAVE_FAILED));
          continue;
       }
+
+      if (target_backup_interval < autosave_interval )
+         target_backup_interval = autosave_interval;
+
+      /* The backup counter represents how many X autosaves to wait before making a new backup */
+      auto_st->target_backup_interval = (unsigned int) ceil((double) target_backup_interval / (double) autosave_interval);  /*TODO: change target interval to config option? */
 
       autosave_state.list[i] = auto_st;
    }

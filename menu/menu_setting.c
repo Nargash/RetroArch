@@ -9357,6 +9357,20 @@ static bool setting_append_list(
             SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_CMD_APPLY_AUTO);
             (*list)[list_info->index - 1].get_string_representation =
                &setting_get_string_representation_uint_autosave_interval;
+            CONFIG_BOOL(
+                  list, list_info,
+                  &settings->bools.backup_autosaves,
+                  MENU_ENUM_LABEL_BACKUP_AUTOSAVES,
+                  MENU_ENUM_LABEL_VALUE_BACKUP_AUTOSAVES,
+                  DEFAULT_BACKUP_AUTOSAVES,
+                  MENU_ENUM_LABEL_VALUE_OFF,
+                  MENU_ENUM_LABEL_VALUE_ON,
+                  &group_info,
+                  &subgroup_info,
+                  parent_group,
+                  general_write_handler,
+                  general_read_handler,
+                  SD_FLAG_ADVANCED);
 #endif
 
             CONFIG_BOOL(

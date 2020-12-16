@@ -725,6 +725,7 @@ typedef struct settings
       bool savestate_auto_index;
       bool savestate_auto_save;
       bool savestate_auto_load;
+      bool backup_autosaves;
       bool savestate_thumbnail_enable;
       bool save_file_compression;
       bool savestate_file_compression;

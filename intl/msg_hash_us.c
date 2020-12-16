@@ -1084,6 +1084,19 @@ int msg_hash_get_help_us_enum(enum msg_hash_enums msg, char *s, size_t len)
                              " \n"
                              "A value of 0 disables autosave.");
             break;
+        case MENU_ENUM_LABEL_BACKUP_AUTOSAVES:
+            snprintf(s, len,
+                     "Automatically backup the non-volatile SaveRAM when \n"
+                             "it is autosaved. Only affects automatic \n"
+                             "SRAM saves. \n"
+                             " \n"
+                             "Up to 10 backups are stored in a subdirectory \n"
+                             "beneath the save file directory, with the \n"
+                             "extension .sbak. If 10 or more backups exist, \n"
+                             "the oldest will be overwritten. Backups \n"
+                             "will occur about every 5 minutes.\n"
+            );
+            break;
         case MENU_ENUM_LABEL_INPUT_BIND_DEVICE_TYPE:
             snprintf(s, len,
                      "Input Device Type. \n"

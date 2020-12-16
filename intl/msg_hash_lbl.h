@@ -167,6 +167,10 @@ MSG_HASH(
    "autosave_interval"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_BACKUP_AUTOSAVES,
+   "backup_autosaves"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_AUTO_OVERRIDES_ENABLE,
    "auto_overrides_enable"
    )

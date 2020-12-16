@@ -2889,6 +2889,14 @@ MSG_HASH(
    "Automatically saves the non-volatile SaveRAM at a regular interval (in seconds)."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_BACKUP_AUTOSAVES,
+   "Backup SaveRAM during autosave"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_BACKUP_AUTOSAVES,
+   "Automatically backup the non-volatile SaveRAM when it is autosaved."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SAVESTATE_AUTO_INDEX,
    "Increment Save State Index Automatically"
    )

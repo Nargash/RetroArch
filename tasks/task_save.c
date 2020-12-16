@@ -136,6 +136,7 @@ struct autosave
    unsigned short backup_counter;
    char filename_base[PATH_MAX_LENGTH];
    char *backup_dir;
+   char *backup_full_filename;
    struct string_list *backup_list;
 };
 #endif
@@ -238,30 +239,33 @@ static void autosave_thread(void *data)
             {
                if (save->autosave_counter == 0 || save->autosave_counter == save->target_backup_interval)
                {
-                     char *backup_filename;
-                     backup_filename = strdup(save->backup_dir);
-                     fill_str_dated_filename(backup_filename, save->filename_base,
-                        FILE_PATH_CORE_BACKUP_EXTENSION, sizeof(backup_filename));
+                     if (save->backup_counter >= (save->max_backups-1))
+                        save->backup_counter = 0;
+                     char tmp[PATH_MAX_LENGTH];
+                     tmp[0] = '\0';
+                     strlcpy(save->backup_full_filename, save->backup_dir, PATH_MAX_LENGTH * sizeof(char));
+                     fill_str_dated_filename(tmp, save->filename_base,
+                        "sbak", PATH_MAX_LENGTH * sizeof(char));
+                     fill_pathname_join(save->backup_full_filename,save->backup_full_filename,tmp,PATH_MAX_LENGTH * sizeof(char));
 
                      if (save->backup_counter < save->backup_list->size)
                      {
                         if (path_is_valid(save->backup_list->elems[save->backup_counter].data))
-                           filestream_delete(save->backup_list->elems[save->backup_counter].data);
+                           if (filestream_delete(save->backup_list->elems[save->backup_counter].data) !=0)
+                              RARCH_WARN("Failed to remove old backup file at %s.\n", save->backup_list->elems[save->backup_counter].data);
+                           strlcpy(save->backup_list->elems[save->backup_counter].data, save->backup_full_filename, PATH_MAX_LENGTH * sizeof(char));
                      }
                      else
                      {
                         union string_list_elem_attr attr;
                         attr.i = 0;
-                        string_list_append(save->backup_list, backup_filename, attr);
+                        string_list_append(save->backup_list, save->backup_full_filename, attr);
                      }
                      
-                     autosave_save(backup_filename, save->compress_files, save->buffer, save->bufsize);
+                     autosave_save(save->backup_full_filename, save->compress_files, save->buffer, save->bufsize);
                      save->autosave_counter = 0;
                      save->backup_counter++;
                }
-               
-               if (save->backup_counter == save->max_backups)
-                  save->backup_counter = 0;
             }
             
             save->autosave_counter++;
@@ -318,7 +322,10 @@ static autosave_t *autosave_new(const char *path,
    handle->max_backups           = 10;
    handle->autosave_counter      = 0;
    handle->backup_counter        = 0;
-   handle->target_backup_interval = 0;
+   handle->target_backup_interval= 0;
+   handle->backup_list           = NULL;
+   handle->backup_dir            = NULL;
+   handle->backup_full_filename  = (char*)malloc(PATH_MAX_LENGTH * sizeof(char));;
 
    buf                           = malloc(size);
 
@@ -337,17 +344,16 @@ static autosave_t *autosave_new(const char *path,
    handle->cond                  = scond_new();
    handle->thread                = sthread_create(autosave_thread, handle);
    
-   char  *backup_dir;
-   backup_dir = strdup(path);
+   handle->backup_dir  = strdup(path);
    if (backup_saves)
    {
       /* Create directory, if required */
-      path_remove_extension(backup_dir);
-      if (!path_is_directory(backup_dir))
+      path_remove_extension(handle->backup_dir);
+      if (!path_is_directory(handle->backup_dir))
       {
-         if (!path_mkdir(backup_dir))
+         if (!path_mkdir(handle->backup_dir))
          {
-            RARCH_ERR("[Save backup] Failed to create backup directory: %s.\n", backup_dir);
+            RARCH_ERR("[Save backup] Failed to create backup directory: %s.\n", handle->backup_dir);
             backup_saves= false;
             handle->max_backups=0;  /* This will turn off auto-backup in the autosave thread */
          }
@@ -355,31 +361,31 @@ static autosave_t *autosave_new(const char *path,
    }
    if (backup_saves)
    {
-      handle->backup_dir =strdup(backup_dir);
-      fill_pathname_parent_dir_name(handle->filename_base,
-            backup_dir, sizeof(handle->filename_base));
+      
+      fill_pathname_base(handle->filename_base,
+            handle->backup_dir, sizeof(handle->filename_base));
       
       /* Get backup file list */
       struct string_list *backup_list      = NULL;
       backup_list = dir_list_new(
-            backup_dir,
-            FILE_PATH_CORE_BACKUP_EXTENSION, /* TODO: want a new extension? */
+            handle->backup_dir,
+            "sbak",
             false, /* include_dirs */
             false, /* include_hidden */
             true, /* include_compressed */
             false  /* recursive */
       );
          /* Sanity check */
-      if (!backup_list || backup_list->size < 1)
+      if (!backup_list)
       {
-         backup_saves= false;
-         handle->max_backups=0;  /* This will turn off auto-backup in the autosave thread */
-         string_list_free(backup_list);
+         backup_saves = false;
+         handle->max_backups = 0;  /* This will turn off auto-backup in the autosave thread */
       }
       else
       {
          dir_list_sort(backup_list, true);   /* Sorted by timestamp since we assume all backup files in this dir have timestamps in their names */
          handle->backup_list = backup_list;
+         handle->backup_counter = handle->backup_list->size;    /* Set starting location of backup counter */
       }
       
    }
@@ -405,7 +411,17 @@ static void autosave_free(autosave_t *handle)
    slock_free(handle->cond_lock);
    scond_free(handle->cond);
 
-   string_list_free(handle->backup_list);
+   if (handle->backup_list)
+      string_list_free(handle->backup_list);
+   handle->backup_list = NULL;
+
+   if (handle->backup_full_filename)
+      free(handle->backup_full_filename);
+   handle->backup_full_filename = NULL;
+
+   if (handle->backup_dir)
+      free(handle->backup_dir);
+   handle->backup_dir = NULL;
 
    if (handle->buffer)
       free(handle->buffer);
@@ -439,6 +455,12 @@ bool autosave_init(void)
    autosave_state.list = list;
    autosave_state.num  = (unsigned)task_save_files->size;
 
+   /* Ensure backup interval is not less than the autosave interval
+      The target interval represents the number of times a save will be autosaved before backing up */
+   if (target_backup_interval < autosave_interval )
+      target_backup_interval = autosave_interval;
+      target_backup_interval = (unsigned int) ceil((double) target_backup_interval / (double) autosave_interval);  /*TODO: change target interval to config option? */
+
    for (i = 0; i < task_save_files->size; i++)
    {
       retro_ctx_memory_info_t mem_info;
@@ -466,11 +488,8 @@ bool autosave_init(void)
          continue;
       }
 
-      if (target_backup_interval < autosave_interval )
-         target_backup_interval = autosave_interval;
-
       /* The backup counter represents how many X autosaves to wait before making a new backup */
-      auto_st->target_backup_interval = (unsigned int) ceil((double) target_backup_interval / (double) autosave_interval);  /*TODO: change target interval to config option? */
+      auto_st->target_backup_interval = target_backup_interval;
 
       autosave_state.list[i] = auto_st;
    }

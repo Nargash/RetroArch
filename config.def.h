@@ -938,9 +938,12 @@ static const bool audio_enable_menu_bgm    = false;
 #if defined(__i386__) || defined(__i486__) || defined(__i686__) || defined(__x86_64__) || defined(_M_X64) || defined(_WIN32) || defined(OSX) || defined(ANDROID) || defined(IOS)
 /* Flush to file every 10 seconds on modern platforms by default */
 #define DEFAULT_AUTOSAVE_INTERVAL 10
+/* Enable backing up autosaves on modern platforms by default */
+#define DEFAULT_BACKUP_AUTOSAVES true
 #else
 /* Default to disabled on I/O-constrained platforms */
 #define DEFAULT_AUTOSAVE_INTERVAL 0
+#define DEFAULT_BACKUP_AUTOSAVES false
 #endif
 
 /* Publicly announce netplay */

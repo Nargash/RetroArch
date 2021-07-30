@@ -3163,12 +3163,20 @@ static bool config_load_file(global_t *global,
     * or if it is not the first config load. */
    if (config_get_bool(conf, "log_verbosity", &tmp_bool) &&
       (!retroarch_override_setting_is_set(RARCH_OVERRIDE_SETTING_VERBOSITY, NULL) ||
-      !first_load))      
+      !first_load))
    {
       if (tmp_bool)
          verbosity_enable();
       else
          verbosity_disable();
+   }
+   /* On first config load, make sure log_to_file is true if 'log-file' command line 
+    * argument was used. */
+   if (config_get_bool(conf, "log_to_file", &tmp_bool) &&
+      retroarch_override_setting_is_set(RARCH_OVERRIDE_SETTING_LOG_TO_FILE, NULL) &&
+      first_load)
+   {
+      configuration_set_bool(settings,settings->bools.log_to_file,true);
    }
    if (config_get_uint(conf, "frontend_log_level", &tmp_uint))
    {

@@ -3172,8 +3172,7 @@ static bool config_load_file(global_t *global,
    }
    /* On first config load, make sure log_to_file is true if 'log-file' command line 
     * argument was used. */
-   if (config_get_bool(conf, "log_to_file", &tmp_bool) &&
-      retroarch_override_setting_is_set(RARCH_OVERRIDE_SETTING_LOG_TO_FILE, NULL) &&
+   if (retroarch_override_setting_is_set(RARCH_OVERRIDE_SETTING_LOG_TO_FILE, NULL) &&
       first_load)
    {
       configuration_set_bool(settings,settings->bools.log_to_file,true);
